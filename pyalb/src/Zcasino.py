@@ -11,4 +11,4 @@ if c == a :
     b *= 2
     print("vous avez gagné ",b, "$")
 elif a % 2 == c % 2 :
-    print("todo")
+    print("todo2")
