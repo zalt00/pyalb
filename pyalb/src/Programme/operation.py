@@ -1,3 +1,5 @@
+# -*-coding:Latin-1 -*
+
 def div(a):
     """fonction renvoyant la liste des diviseurs d'un nomhre mis en paramètre"""
     liste= []
