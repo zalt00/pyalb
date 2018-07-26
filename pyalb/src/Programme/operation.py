@@ -1,17 +1,9 @@
-
-def div(a) :    
+def div(a):
+    """fonction renvoyant la liste des diviseurs d'un nomhre mis en paramètre"""
+    liste= []
     i = 0
-    liste = []
-    
-    while len(liste) <= a :
-        liste += [len(liste)]
-    
-    liste.remove(0)
-    
-    while len(liste) != i :
-        if a % liste[i] == 0 :
-            i +=1
-        else :
-            del(liste[i])
-    
+    while i != a :
+        i += 1
+        if a % i == 0 :
+            liste += [i]
     return(liste)
