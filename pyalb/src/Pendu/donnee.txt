@@ -1,6 +1,8 @@
 bonjour
 aurevoir
 salut
-hey
-ah
-Essais = 8
+loutre
+risque
+planete
+portail
+Essais =8
