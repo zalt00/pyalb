@@ -21,15 +21,14 @@ if start == "0" :
         d = my.load()
 else :
     d=1000
-
+print("tapez \"settings\" pour ouvrir les options")
 while during != "0" and d > 0 : #boucle globale
     during = str()
     a = str()
     while a != "settings" and d>0: #boucle, arrête quand le joueur n'a plus d'argent
         
         print("vous avez ",d, "$") #argent actuel
-        
-        a = input("Numero sur lequel parier (tapez settings pour ouvrir les options) : ") #numéro
+        a = input("Numero sur lequel parier : ") #numéro
         if a== "settings" :
             print()
         else :
