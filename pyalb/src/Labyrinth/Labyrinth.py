@@ -1,61 +1,109 @@
 # -*-coding:utf-8 -*
 
 from ClassesLab import *
+from FuncLab import Move
+from os import system
+from msvcrt import getch
 
-a = LabTra(5,6)
+#a = LabTra(5,6)
 
-SE = "┏━"
-h = "━━"
-SO = "━┓"
-vO = "┃ "
-vE = " ┃"
-NE = "┗━"
-NO = "━┛"
-nth = "  "
-hey = "<>"
 
-if False :
-    a[0,0] = "┏"
-    a[1,0] = "━━━"
-    a[2,0] = "┓  "
-    a[0,1] = "┃"
-    a[1,1] = " 0 "
-    a[2,1] = "┃"
-    a[0,2] = "┗"
-    a[1,2] = "━━━"
-    a[2,2] = "┛"
 
-a[0,0] = SE
-a[1,0] = h
-a[2,0] = h
-a[3,0] = h
-a[4,0] = SO
-a[0,1] = vO
-a[1,1] = nth
-a[2,1] = nth
-a[3,1] = hey
-a[4,1] = vE
-a[0,2] = NE
-a[1,2] = h
-a[2,2] = SO
-a[3,2] = nth
-a[4,2] = vE
-a[0,3] = SE
-a[1,3] = h
-a[2,3] = NO
-a[3,3] = nth
-a[4,3] = vE
-a[0,4] = vO
-a[1,4] = nth
-a[2,4] = nth
-a[3,4] = nth
-a[4,4] = vE
-a[0,5] = NE
-a[1,5] = h
-a[2,5] = h
-a[3,5] = h
-a[4,5] = NO
+
+
+
+SE = LabObj("┏━", tag="mur")
+h = LabObj("━━", tag="mur")
+SO = LabObj("━┓", tag="mur")
+vO = LabObj("┃ ", tag="mur")
+vE = LabObj(" ┃", tag="mur")
+NE = LabObj("┗━", tag="mur")
+NO = LabObj("━┛", tag="mur")
+nth = LabObj("  ", tag="vide")
+hey = LabObj("<■", tag="pers")
+
+
+
+
+with open('carte.txt', 'r', encoding="utf8") as fichier :
+    crt_str = fichier.read()
+
+crt_split = crt_str.split("\n")
+L_crt = len(crt_split)
+l_crt = int(len(crt_split[0]) / 2)
+a = LabTra(l_crt, L_crt)
+
+
+
+continuer = True
+l = 0
+L = 0
+while l != l_crt or L!= L_crt-1:
+    if crt_str[0]== '\n':
+        l=0
+        L+=1
+        crt_str = crt_str[1:]
+    bloc = crt_str[:2]
+    if bloc == SE.txt :#
+        a[l,L] = SE
+        l +=1
+        crt_str = crt_str[2:]
+    elif bloc == h.txt :#
+        a[l,L] = h
+        l +=1
+        crt_str = crt_str[2:]
+    elif bloc == SO.txt :#
+        a[l,L] = SO
+        l +=1
+        crt_str = crt_str[2:]
+    elif bloc == vO.txt :#
+        a[l,L] = vO
+        l +=1
+        crt_str = crt_str[2:]
+    elif bloc == vE.txt :#
+        a[l,L] = vE
+        l +=1
+        crt_str = crt_str[2:]
+    elif bloc == NE.txt :#
+        a[l,L] = NE
+        l +=1
+        crt_str = crt_str[2:]
+    elif bloc == NO.txt :#
+        a[l,L] = NO
+        l +=1
+        crt_str = crt_str[2:]
+    elif bloc == nth.txt :#
+        a[l,L] = nth
+        l +=1
+        crt_str = crt_str[2:]
+    elif bloc == hey.txt :
+        a[l,L] = hey
+        l +=1
+        crt_str = crt_str[2:]
+    else :
+        raise ValueError ("la valeur ne correspond pas aux modèles")
+
+
+
+
 print (a)
 
-from os import system
-system("pause")
+
+
+current_pos_x = 3
+current_pos_y = 1
+touche = str()
+
+while touche != "quit":
+    
+    touche = getch()
+    touche = touche.decode("utf-8")
+    
+    nouvelle_pos = Move(touche, current_pos_x, current_pos_y, a)
+    a[current_pos_x, current_pos_y] = nth
+    a[nouvelle_pos] = hey
+    current_pos_x, current_pos_y = tuple(nouvelle_pos)
+    system("cls")
+    print(a)
+
+

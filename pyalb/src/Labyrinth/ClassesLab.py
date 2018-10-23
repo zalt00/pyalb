@@ -31,7 +31,7 @@ class LabTra :
         
         
         while L > 0 : ###creation du terrain
-            self.tra.append(_l)
+            self.tra.append(list(_l))
 
             L -= 1
         
@@ -69,10 +69,8 @@ class LabTra :
         x = p[0]
         y = p[1]
         
-        largeurs = list(self.tra[y])
         
-        largeurs[x] = obj
-        self.tra[y] = largeurs
+        self.tra[y][x] = obj
     
     
     
