@@ -12,15 +12,14 @@ from msvcrt import getch
 
 
 
-SE = LabObj("┏━", tag="mur")
-h = LabObj("━━", tag="mur")
-SO = LabObj("━┓", tag="mur")
-vO = LabObj("┃ ", tag="mur")
-vE = LabObj(" ┃", tag="mur")
-NE = LabObj("┗━", tag="mur")
-NO = LabObj("━┛", tag="mur")
-nth = LabObj("  ", tag="vide")
-hey = LabObj("<■", tag="pers")
+SE = LabObj("┏", tag="mur")
+h = LabObj("━", tag="mur")
+SO = LabObj("┓", tag="mur")
+v = LabObj("┃", tag="mur")
+NE = LabObj("┗", tag="mur")
+NO = LabObj("┛", tag="mur")
+nth = LabObj(" ", tag="vide")
+hey = LabObj("■", tag="pers")
 
 
 
@@ -30,7 +29,7 @@ with open('carte.txt', 'r', encoding="utf8") as fichier :
 
 crt_split = crt_str.split("\n")
 L_crt = len(crt_split)
-l_crt = int(len(crt_split[0]) / 2)
+l_crt = int(len(crt_split[0]))
 a = LabTra(l_crt, L_crt)
 
 
@@ -39,71 +38,109 @@ continuer = True
 l = 0
 L = 0
 while l != l_crt or L!= L_crt-1:
-    if crt_str[0]== '\n':
+    bloc = crt_str[0]
+    if bloc == '\n':
         l=0
         L+=1
         crt_str = crt_str[1:]
-    bloc = crt_str[:2]
-    if bloc == SE.txt :#
+    elif bloc == SE.txt :#
         a[l,L] = SE
         l +=1
-        crt_str = crt_str[2:]
+        crt_str = crt_str[1:]
     elif bloc == h.txt :#
         a[l,L] = h
         l +=1
-        crt_str = crt_str[2:]
+        crt_str = crt_str[1:]
     elif bloc == SO.txt :#
         a[l,L] = SO
         l +=1
-        crt_str = crt_str[2:]
-    elif bloc == vO.txt :#
-        a[l,L] = vO
+        crt_str = crt_str[1:]
+    elif bloc == v.txt :#
+        a[l,L] = v
         l +=1
-        crt_str = crt_str[2:]
-    elif bloc == vE.txt :#
-        a[l,L] = vE
-        l +=1
-        crt_str = crt_str[2:]
+        crt_str = crt_str[1:]
     elif bloc == NE.txt :#
         a[l,L] = NE
         l +=1
-        crt_str = crt_str[2:]
+        crt_str = crt_str[1:]
     elif bloc == NO.txt :#
         a[l,L] = NO
         l +=1
-        crt_str = crt_str[2:]
+        crt_str = crt_str[1:]
     elif bloc == nth.txt :#
         a[l,L] = nth
         l +=1
-        crt_str = crt_str[2:]
+        crt_str = crt_str[1:]
     elif bloc == hey.txt :
         a[l,L] = hey
         l +=1
-        crt_str = crt_str[2:]
+        crt_str = crt_str[1:]
     else :
         raise ValueError ("la valeur ne correspond pas aux modèles")
 
 
 
 
-print (a)
 
 
+current_pos_x, current_pos_y = a.find(hey)
 
-current_pos_x = 3
-current_pos_y = 1
+
 touche = str()
 
-while touche != "quit":
+Quitter = False
+
+
+while not Quitter :
     
-    touche = getch()
-    touche = touche.decode("utf-8")
-    
-    nouvelle_pos = Move(touche, current_pos_x, current_pos_y, a)
-    a[current_pos_x, current_pos_y] = nth
-    a[nouvelle_pos] = hey
-    current_pos_x, current_pos_y = tuple(nouvelle_pos)
     system("cls")
-    print(a)
+    print("Appuyez sur la touche 'echap' pour ouvrir le menu", a, sep='\n\n')
+    
+    
+    
+    
+    while touche != "\x1b" and not Quitter:
+         
+        touche = getch()
+        touche = touche.decode("utf-8")
+        if touche != "\x1b" :
+            
+            
+            try :
+                nouvelle_pos = Move(touche, current_pos_x, current_pos_y, a)
+                a[current_pos_x, current_pos_y] = nth
+                a[nouvelle_pos] = hey
+                current_pos_x, current_pos_y = tuple(nouvelle_pos)
+                system("cls")
+                print("Appuyez sur la touche 'echap' pour ouvrir le menu", a, sep="\n\n")
+                
+                
+            except IndexError:
+                Quitter = True
+                a[current_pos_x, current_pos_y] = nth
+                system("cls")
+                print("Appuyez sur la touche 'echap' pour ouvrir le menu", a, sep="\n\n")
+                print("Vous avez atteint la sortie !")
+                system("pause")
 
 
+
+    if touche == "\x1b" :
+        system("cls")
+        print("0 - quitter\n1 - reprendre")
+        chtrl = getch()
+        chtrl = chtrl.decode("utf-8")
+        if chtrl == "0" :
+            Quitter = True
+        elif chtrl == "1" :
+            touche = ""
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
