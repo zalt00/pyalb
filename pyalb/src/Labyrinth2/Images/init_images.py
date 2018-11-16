@@ -34,7 +34,7 @@ def PNGS (path) :
         img_name = img_name[len(img_name)-1]
         
         if image.endswith("_nth.png"):
-            image_obj = LabObj(image_tab, "void", img_name[0])
+            image_obj = LabObj(image_tab, "void", img_name[1])
         else :
             image_obj = LabObj(image_tab, "mur", img_name[0])
         
@@ -45,6 +45,6 @@ def PNGS (path) :
     return pngs
 
 
-def Save_img (img) :
+def save_img (img) :
 
-    mpimg.imsave("bg.png", img)
+    mpimg.imsave("Images/bg.png", img)
