@@ -72,7 +72,7 @@ class PlayInterface(tk.Frame) :
         tk.Frame.__init__(self, root, width=0, height=0, **kwargs)
         self.pack(fill=tk.BOTH)
         
-        self.fenetre = tk.Frame(fenetre, borderwidth=2, relief=tk.FLAT)
+        self.fenetre = tk.Frame(root, borderwidth=2, relief=tk.FLAT)
         self.fenetre.pack()
 
         self.ZOOM = 2
@@ -227,11 +227,11 @@ class PlayInterface(tk.Frame) :
             else :
                 mur = True
         if not mur :
-            self.tomove -= 1
+            self.tomove -= 2
 
             if self.tomove > -9:
                 self.mve_para = (x, y)
-                self.after(10, self.move)
+                self.after(16, self.move)
             else :
 
                 if x < 0 : 
