@@ -80,6 +80,7 @@ class PlayInterface(tk.Frame) :
         self.play_canvas = tk.Canvas(self.fenetre, width=0, height=0, background="#bbbbbb")
         
         self.coords = [4,2]
+        self.rlcoords = [4,2]
 
         self.menu_map_dis = [a[7:] for a in glob("Cartes/*")]
         self.menu_label = tk.Label(self.fenetre, text="S\u00E9lectionnez une carte parmi celles-ci :")
@@ -99,6 +100,13 @@ class PlayInterface(tk.Frame) :
         self.tomove = 8
         self.mve_para = None
         self.touche_save = None
+
+        self.notmur = False
+
+
+        self.bg2move = 8
+        self.dirsave = None
+
 
         self.pack_menu()
 
@@ -133,8 +141,14 @@ class PlayInterface(tk.Frame) :
         self.play_canvas["width"] = width_tab*self.ZOOM
         self.play_canvas["height"] = height_tab*self.ZOOM
 
-        self.bg = tk.PhotoImage(file="Images/bg.png").zoom(self.ZOOM, self.ZOOM)
-        self.play_canvas.create_image(0, 0, image=self.bg, anchor=tk.NW)
+        self.pos_bgrl = (width_tab*self.ZOOM//2, height_tab*self.ZOOM//2)
+        self.pos_bg = [len(self.list_globale[0])//2, len(self.list_globale)//2]
+
+        self.a = (self.pos_bgrl[0]-self.bgimg(self.pos_bg[0]), self.pos_bgrl[1]-self.bgimg(self.pos_bg[1])) 
+        #permet d'eviter des desycro entre bg et pers
+
+        self.bg_img = tk.PhotoImage(file="Images/bg.png").zoom(self.ZOOM, self.ZOOM)
+        self.bg = self.play_canvas.create_image(self.pos_bgrl[0], self.pos_bgrl[1], image=self.bg_img)
 
         self.pers_img = tk.PhotoImage(file="Images/pers.png").zoom(self.ZOOM, self.ZOOM)
         self.pers = self.play_canvas.create_image(self.psimg(4), self.psimg(2), image=self.pers_img)
@@ -155,7 +169,10 @@ class PlayInterface(tk.Frame) :
     def psimg (self, pos) :
         return (4+8*pos)*self.ZOOM
 
-    
+    def bgimg(self, pos) :
+        return (8*pos)*self.ZOOM
+
+
     def clavier_press (self, event) :
         if event.keysym == "Escape" : self.quit()
 
@@ -186,6 +203,16 @@ class PlayInterface(tk.Frame) :
                             
                 self.move(x=-1)
 
+            elif touche == "p" :
+                
+                self.pos_bg[1] += 1
+                self.coords[1] += 1
+                self.play_canvas.coords(self.bg, self.bgimg(self.pos_bg[0]), self.bgimg(self.pos_bg[1]))
+                self.r = True
+
+            elif touche == "h" :
+
+                self.move_bg(x=1)
             else :
                 
                 self.r = True
@@ -207,27 +234,28 @@ class PlayInterface(tk.Frame) :
         mur = False
 
         if x < 0 :
-            if self.list_globale[self.coords[1]][self.coords[0]-1].tag != "mur" :
+            if self.notmur or self.list_globale[self.rlcoords[1]][self.rlcoords[0]-1].tag != "mur" :
                 self.play_canvas.coords(self.pers, self.psimg(self.coords[0])-a, self.psimg(self.coords[1]))
             else :
                 mur = True
         elif x > 0 :
-            if self.list_globale[self.coords[1]][self.coords[0]+1].tag != "mur" :
+            if self.notmur or self.list_globale[self.rlcoords[1]][self.rlcoords[0]+1].tag != "mur" :
                 self.play_canvas.coords(self.pers, self.psimg(self.coords[0])+a, self.psimg(self.coords[1]))
             else :
                 mur = True
         elif y < 0 :
-            if self.list_globale[self.coords[1]-1][self.coords[0]].tag != "mur" :
+            if self.notmur or self.list_globale[self.rlcoords[1]-1][self.rlcoords[0]].tag != "mur" :
                 self.play_canvas.coords(self.pers, self.psimg(self.coords[0]), self.psimg(self.coords[1])-a)
             else :
                 mur = True
         elif y > 0 :
-            if self.list_globale[self.coords[1]+1][self.coords[0]].tag != "mur" :
+            if self.notmur or self.list_globale[self.rlcoords[1]+1][self.rlcoords[0]].tag != "mur" :
                 self.play_canvas.coords(self.pers, self.psimg(self.coords[0]), self.psimg(self.coords[1])+a)
             else :
                 mur = True
         if not mur :
             self.tomove -= 2
+            self.notmur = True
 
             if self.tomove > -9:
                 self.mve_para = (x, y)
@@ -236,19 +264,25 @@ class PlayInterface(tk.Frame) :
 
                 if x < 0 : 
                     self.coords[0] -= 1
+                    self.rlcoords[0] -= 1
                     tch = "q"
                 elif x > 0 :
                     self.coords[0] += 1
+                    self.rlcoords[0] += 1
                     tch = "d"
                 elif y < 0 :
                     self.coords[1] -= 1
+                    self.rlcoords[1] -= 1
                     tch = "z"
                 elif y > 0 :
                     self.coords[1] += 1
+                    self.rlcoords[1] += 1
                     tch = "s"
 
                 self.play_canvas.coords(self.pers, self.psimg(self.coords[0]), self.psimg(self.coords[1]))
 
+                self.notmur = False
+                
                 if self.rls :
                     self.mve_para = None
                     self.r = True
@@ -262,7 +296,26 @@ class PlayInterface(tk.Frame) :
             self.r = True
             self.mve_para = None
             
+    def move_bg(self, x=0, y=0) :
+        
+        if x > 0 :
+            def _movebg(self, n_2move) :
+                
+                if n_2move > -9 :
+                    a = 9-n_2move
+                    self.play_canvas.coords(self.pers, self.psimg(self.coords[0])+a, self.psimg(self.coords[1]))
+                    self.play_canvas.coords(self.bg, self.bgimg(self.pos_bg[0])+a, self.bgimg(self.pos_bg[1]))
+                    n_2move -= 1
+                    self.play_canvas.after(10, _movebg, self, n_2move)
+                else :
+                    self.coords[0] += 1
+                    self.pos_bg[0] += 1
+                    self.play_canvas.coords(self.pers, self.psimg(self.coords[0]), self.psimg(self.coords[1]))
+                    self.play_canvas.coords(self.bg, self.bgimg(self.pos_bg[0]), self.bgimg(self.pos_bg[1]))
 
+        _movebg(self, 8)
+        self.r = True
+            
 
     def clavier_release(self, event):
         
