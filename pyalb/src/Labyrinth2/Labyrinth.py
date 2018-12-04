@@ -207,130 +207,81 @@ class PlayInterface(tk.Frame) :
             
             self.touche_save = event
                         
+            
 
-
-    def move_pers(self, x, y):
+    def move_pers(self, x, y) :
         
-        mur = True
+        mur = False
 
+        posorneg = x, y # positive or negative
 
         if x > 0 :
             if self.list_globale[self.rlcoords[1]][self.rlcoords[0]+1].tag != "mur" :
-                mur = False
 
-                @self.gestion_rls_touchesave
-                def _movepers(self, n_2move, x, y) : # RIGHT
-
-                    if n_2move > 0 :
-                        a = (9 - n_2move) * self.ZOOM
-                        self.play_canvas.coords(self.pers, self.psimg(self.coords[0])+a, self.psimg(self.coords[1]))
-
-                        self.after(16, _movepers, self, n_2move-1, x, y)
-
-                    else :
-                        self.coords[0] += 1
-                        self.rlcoords[0] += 1
-
-                        return True
-                    
+                n_2move = [2, 0] # x puis y
+                xory = 0 # 0 pour x, 1 pour y
             else :
                 mur = True
-
-
-        elif x < 0 :
+        
+        if x < 0 :
             if self.list_globale[self.rlcoords[1]][self.rlcoords[0]-1].tag != "mur" :
-                mur = False
 
-                @self.gestion_rls_touchesave
-                def _movepers(self, n_2move, x, y) : # LEFT
-
-                    if n_2move > 0 :
-                        a = (9 - n_2move) * self.ZOOM
-                        self.play_canvas.coords(self.pers, self.psimg(self.coords[0])-a, self.psimg(self.coords[1]))
-
-                        self.after(16, _movepers, self, n_2move-1, x, y)
-
-                    else :
-                        self.coords[0] -= 1
-                        self.rlcoords[0] -= 1
-
-                        return True
-                    
+                n_2move = [-2, 0] # x puis y
+                xory = 0 # 0 pour x, 1 pour y
             else :
                 mur = True
 
-
-        elif y < 0 :
-            if self.list_globale[self.rlcoords[1]-1][self.rlcoords[0]].tag != "mur" :
-                mur = False
-
-                @self.gestion_rls_touchesave
-                def _movepers(self, n_2move, x, y) : # DOWN
-
-                    if n_2move > 0 :
-                        a = (9 - n_2move) * self.ZOOM
-                        self.play_canvas.coords(self.pers, self.psimg(self.coords[0]), self.psimg(self.coords[1])-a)
-
-                        self.after(16, _movepers, self, n_2move-1, x, y)
-
-                    else :
-                        self.coords[1] -= 1
-                        self.rlcoords[1] -= 1
-
-                        return True
-                    
-            else :
-                mur = True
-
-
-        elif y > 0 :
+        if y > 0 :
             if self.list_globale[self.rlcoords[1]+1][self.rlcoords[0]].tag != "mur" :
-                mur = False
 
-                @self.gestion_rls_touchesave
-                def _movepers(self, n_2move, x, y) : # UP
-
-                    if n_2move > 0 :
-                        a = (9 - n_2move) * self.ZOOM
-                        self.play_canvas.coords(self.pers, self.psimg(self.coords[0]), self.psimg(self.coords[1])+a)
-
-                        self.after(16, _movepers, self, n_2move-1, x, y)
-
-                    else :
-                        self.coords[1] += 1
-                        self.rlcoords[1] += 1
-
-                        return True
-                    
+                n_2move = [0, 2] # x puis y
+                xory = 1 # 0 pour x, 1 pour y
             else :
                 mur = True
-                
+
+        if y < 0 :
+            if self.list_globale[self.rlcoords[1]-1][self.rlcoords[0]].tag != "mur" :
+
+                n_2move = [0, -2] # x puis y
+                xory = 1 # 0 pour x, 1 pour y
+            else :
+                mur = True
+
 
 
         if not mur :
-            _movepers(self, 8, x, y)
+            def _movepers(self, n_2move, posorneg, xory, nb) :
+
+                    self.play_canvas.coords(self.pers, self.psimg(self.coords[0])+n_2move[0], self.psimg(self.coords[1])+n_2move[1])
+
+                    n_2move[xory] += posorneg[xory] * self.ZOOM
+                    nb -= 1
+                    if nb != 0 :
+                        self.after(16, _movepers, self, n_2move, posorneg, xory, nb)
+                    else :
+                        self.after(16, todo_after_movepers, self, posorneg, xory)
             
-        else :
-            self.r = True
-            
 
+            def todo_after_movepers(self, posorneg, xory) :
 
-    def gestion_rls_touchesave(self, func) :
+                self.coords[xory] += posorneg[xory]
+                self.rlcoords[xory] += posorneg[xory]
 
-        def func_modif(self, n_2move, x, y) :
-
-            a = func(self, n_2move, x, y)
-
-            if a is not None :
                 if not self.rls :
-                    self.after(8, self.move_pers, x, y)
+                    self.after(16, self.move_pers, x, y)
                 else :
                     self.r = True
                     if self.touche_save is not None :
                         if self.touche_save.keysym.lower() != self.touche :
                             self.clavier_press(self.touche_save)
-        
-        return func_modif
+            
+
+            _movepers(self, n_2move, posorneg, xory, 8)
+
+        else :
+            self.r = True
+
+
 
 
         
@@ -354,6 +305,7 @@ class PlayInterface(tk.Frame) :
         _movebg(self, 8)
         self.r = True
             
+
 
     def clavier_release(self, event):
         
