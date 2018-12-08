@@ -5,10 +5,11 @@ import numpy as np
 import tkinter as tk
 from Images.init_images import LabObj, PNGS, save_img
 from glob import glob
+from time import perf_counter
 
 ###### [1] CREATION DU BACKGROUND ######
 
-
+t1 = perf_counter()
 def create_bg(choosen_map) :
 
 
@@ -72,14 +73,14 @@ class PlayInterface(tk.Frame) :
         tk.Frame.__init__(self, root, width=0, height=0, **kwargs)
         self.pack(fill=tk.BOTH)
         
-        self.fenetre = tk.Frame(root, borderwidth=2, relief=tk.FLAT)
+        self.fenetre = tk.Frame(self, borderwidth=2, relief=tk.FLAT)
         self.fenetre.pack()
 
         self.ZOOM = 2
 
         self.play_canvas = tk.Canvas(self.fenetre, width=0, height=0, background="#bbbbbb")
         
-        self.coords = [4,2]
+        self.coords = [self.psimg(4),self.psimg(2)]
         self.rlcoords = [4,2]
 
         self.menu_map_dis = [a[7:] for a in glob("Cartes/*")]
@@ -95,10 +96,12 @@ class PlayInterface(tk.Frame) :
             self.menu_liste.insert(i, carte)
             i += 1
 
-        self.r = True
-        self.rls = True
+        self.r = True # evite la pression multiple des touches pour le déplacement du personnage
+        self.r_bg = True # evite la pression multiple des touches pour le déplacement de la caméra
+        self.rls = True # passe en True quand KeyRelease
         self.touche_save = None
 
+        self.touche = None
 
         self.bg2move = 8
         self.dirsave = None
@@ -137,11 +140,9 @@ class PlayInterface(tk.Frame) :
         self.play_canvas["width"] = width_tab*self.ZOOM
         self.play_canvas["height"] = height_tab*self.ZOOM
 
-        self.pos_bgrl = (width_tab*self.ZOOM//2, height_tab*self.ZOOM//2)
-        self.pos_bg = [len(self.list_globale[0])//2, len(self.list_globale)//2]
+        self.pos_bgrl = [width_tab*self.ZOOM//2, height_tab*self.ZOOM//2]
 
-        self.a = (self.pos_bgrl[0]-self.bgimg(self.pos_bg[0]), self.pos_bgrl[1]-self.bgimg(self.pos_bg[1])) 
-        #permet d'eviter des desycro entre bg et pers
+
 
         self.bg_img = tk.PhotoImage(file="Images/bg.png").zoom(self.ZOOM, self.ZOOM)
         self.bg = self.play_canvas.create_image(self.pos_bgrl[0], self.pos_bgrl[1], image=self.bg_img)
@@ -169,45 +170,78 @@ class PlayInterface(tk.Frame) :
         return (8*pos)*self.ZOOM
 
 
-    def clavier_press (self, event) :
-        if event.keysym == "Escape" : self.quit()
 
-        if self.r :
-            self.r = False
-            self.touche_save = None
-            self.touche = event.keysym.lower()
-            self.touche_save = None
+
+
+    def clavier_press (self, event) :
+        touche = event.keysym
+        if touche == "Escape" : self.quit()
+
+        
+
+
+
+
+        if self.r and touche.lower() in "zqsd" :
+            self._pers_evt(touche)
+
+        elif self.r_bg and touche.lower() in "oklm" :
+            self._bg_evt(touche)      
+
+        else :
+            self.touche_save = event
+
+
+    def _bg_evt (self, touche) :
+        self.r_bg = False
+        self.touche_save = None
+        self.touche = touche.lower()
+        self.rls = False
+
+
+        if self.touche == "l" :
+            self.move_bg(0, -1)
+            
+        elif self.touche == "o" :
+            self.move_bg(0, 1)
+
+        elif self.touche == "k" :
+            self.move_bg(1, 0)
+
+        elif self.touche == "m" :
+            self.move_bg(-1, 0)
+
+        else :
+            self.r_bg = True            
+            
+
+    def _pers_evt (self, touche) :
+        self.r = False
+        self.touche_save = None
+        self.touche = touche.lower()
 
             
-            self.rls = False
+        self.rls = False
            
             
-            if self.touche == "z" :
-                            
-                self.move_pers(0, -1)
+        if self.touche == "z" :           
+            self.move_pers(0, -1)
                         
-            elif self.touche == "s" :
+        elif self.touche == "s" :
+            self.move_pers(0, 1)
 
-                self.move_pers(0, 1)
-
-            elif self.touche == "d" :
-                            
-                self.move_pers(1, 0)
+        elif self.touche == "d" :         
+            self.move_pers(1, 0)
                         
-            elif self.touche == "q" :
-                            
-                self.move_pers(-1, 0)
+        elif self.touche == "q" :         
+            self.move_pers(-1, 0)
 
-
-            else :
-                
-                self.r = True
-        
         else :
-            
-            self.touche_save = event
-                        
-            
+            self.r = True
+
+
+
+
 
     def move_pers(self, x, y) :
         
@@ -250,61 +284,78 @@ class PlayInterface(tk.Frame) :
 
 
         if not mur :
-            def _movepers(self, n_2move, posorneg, xory, nb) :
-
-                    self.play_canvas.coords(self.pers, self.psimg(self.coords[0])+n_2move[0], self.psimg(self.coords[1])+n_2move[1])
-
-                    n_2move[xory] += posorneg[xory] * self.ZOOM
-                    nb -= 1
-                    if nb != 0 :
-                        self.after(16, _movepers, self, n_2move, posorneg, xory, nb)
-                    else :
-                        self.after(16, todo_after_movepers, self, posorneg, xory)
-            
-
-            def todo_after_movepers(self, posorneg, xory) :
-
-                self.coords[xory] += posorneg[xory]
-                self.rlcoords[xory] += posorneg[xory]
-
-                if not self.rls :
-                    self.after(16, self.move_pers, x, y)
-                else :
-                    self.r = True
-                    if self.touche_save is not None :
-                        if self.touche_save.keysym.lower() != self.touche :
-                            self.clavier_press(self.touche_save)
-            
-
-            _movepers(self, n_2move, posorneg, xory, 8)
+           
+            self._movepers(n_2move, posorneg, xory, 8)
 
         else :
             self.r = True
 
 
+    def _todo_after_movepers(self, posorneg, xory) :
+        
+
+        self.coords[xory] += posorneg[xory] * 8 * self.ZOOM
+        self.rlcoords[xory] += posorneg[xory]
+
+        if not self.rls :
+            self.after(16, self.move_pers, posorneg[0], posorneg[1])
+        else :
+            self.r = True
+            if self.touche_save is not None :
+                if self.touche_save.keysym.lower() != self.touche :
+                    self.clavier_press(self.touche_save)
+
+
+    def _movepers(self, n_2move, posorneg, xory, nb) :
+
+        self.play_canvas.coords(self.pers, self.coords[0]+n_2move[0], self.coords[1]+n_2move[1])
+
+        n_2move[xory] += posorneg[xory] * self.ZOOM
+        nb -= 1
+        if nb != 0 :
+            self.after(16, self._movepers, n_2move, posorneg, xory, nb)
+        else :
+            self.after(8, self._todo_after_movepers, posorneg, xory)
+
+
+
+
 
 
         
-    def move_bg(self, x=0, y=0) :
+    def move_bg(self, x, y) :
         
-        if x > 0 :
-            def _movebg(self, n_2move) :
-                
-                if n_2move > -9 :
-                    a = 9-n_2move
-                    self.play_canvas.coords(self.pers, self.psimg(self.coords[0])+a, self.psimg(self.coords[1]))
-                    self.play_canvas.coords(self.bg, self.bgimg(self.pos_bg[0])+a, self.bgimg(self.pos_bg[1]))
-                    n_2move -= 1
-                    self.play_canvas.after(10, _movebg, self, n_2move)
-                else :
-                    self.coords[0] += 1
-                    self.pos_bg[0] += 1
-                    self.play_canvas.coords(self.pers, self.psimg(self.coords[0]), self.psimg(self.coords[1]))
-                    self.play_canvas.coords(self.bg, self.bgimg(self.pos_bg[0]), self.bgimg(self.pos_bg[1]))
+        posorneg = x, y
+        
+        if y != 0 :
+            xory = 1
+        elif x != 0 :
+            xory = 0
 
-        _movebg(self, 8)
-        self.r = True
+
+
+        self._movebg(posorneg, xory)
+
+
+    def _movebg(self, posorneg, xory) :
             
+        self.coords[xory] += posorneg[xory] * self.ZOOM *4
+        self.play_canvas.coords(self.pers, self.coords[0], self.coords[1])
+
+        self.pos_bgrl[xory] += posorneg[xory] * self.ZOOM *4
+        self.play_canvas.coords(self.bg, self.pos_bgrl[0], self.pos_bgrl[1])
+
+        if not self.rls :
+            self.after(16, self._movebg, posorneg, xory)
+        else :
+            self.r_bg = True
+            if self.touche_save is not None :
+                if self.touche_save.keysym.lower() != self.touche :
+                    self.clavier_press(self.touche_save)
+
+
+
+
 
 
     def clavier_release(self, event):
@@ -331,6 +382,6 @@ fenetre = tk.Tk()
 fenetre.title("Labyrinth")
 interface = PlayInterface(fenetre)
 
-
+print(perf_counter()-t1)
 
 interface.mainloop()
