@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+from time import perf_counter
+t1 = perf_counter()
 
 import numpy as np
 import tkinter as tk
 from Images.init_images import LabObj, PNGS, save_img
 from glob import glob
-from time import perf_counter
+
 
 ###### [1] CREATION DU BACKGROUND ######
 
@@ -96,12 +98,11 @@ class PlayInterface(tk.Frame) :
             self.menu_liste.insert(i, carte)
             i += 1
 
-        self.r = True # evite la pression multiple des touches pour le déplacement du personnage
-        self.r_bg = True # evite la pression multiple des touches pour le déplacement de la caméra
-        self.rls = True # passe en True quand KeyRelease
-        self.touche_save = None
 
-        self.touche = None
+        self.r = {"pers" : True, "cam" : True}
+        self.rls = {"pers" : True, "cam" : True} # passe en True quand KeyRelease
+        self.touche_save = {"pers" : None, "cam" : None}
+        self.touche = {"pers" : None, "cam" : None}
 
         self.bg2move = 8
         self.dirsave = None
@@ -177,67 +178,69 @@ class PlayInterface(tk.Frame) :
         touche = event.keysym
         if touche == "Escape" : self.quit()
 
-        
+
+        if touche.lower() in "zqsd" :
+
+            if self.r["pers"] :
+                self._pers_evt(touche)
+            else :
+                self.touche_save["pers"] = event
 
 
+        if touche.lower() in "oklm" :
 
-
-        if self.r and touche.lower() in "zqsd" :
-            self._pers_evt(touche)
-
-        elif self.r_bg and touche.lower() in "oklm" :
-            self._bg_evt(touche)      
-
-        else :
-            self.touche_save = event
+            if self.r["cam"] :
+                self._bg_evt(touche)      
+            else :
+                self.touche_save["cam"] = event
 
 
     def _bg_evt (self, touche) :
-        self.r_bg = False
-        self.touche_save = None
-        self.touche = touche.lower()
-        self.rls = False
+        self.r["cam"] = False
+        self.touche_save["cam"] = None
+        self.touche["cam"] = touche.lower()
+        self.rls["cam"] = False
 
 
-        if self.touche == "l" :
+        if self.touche["cam"] == "l" :
             self.move_bg(0, -1)
             
-        elif self.touche == "o" :
+        elif self.touche["cam"] == "o" :
             self.move_bg(0, 1)
 
-        elif self.touche == "k" :
+        elif self.touche["cam"] == "k" :
             self.move_bg(1, 0)
 
-        elif self.touche == "m" :
+        elif self.touche["cam"] == "m" :
             self.move_bg(-1, 0)
 
         else :
-            self.r_bg = True            
+            self.r["cam"] = True            
             
 
     def _pers_evt (self, touche) :
-        self.r = False
-        self.touche_save = None
-        self.touche = touche.lower()
+        self.r["pers"] = False
+        self.touche_save["pers"] = None
+        self.touche["pers"] = touche.lower()
 
             
-        self.rls = False
+        self.rls["pers"] = False
            
             
-        if self.touche == "z" :           
+        if self.touche["pers"] == "z" :           
             self.move_pers(0, -1)
                         
-        elif self.touche == "s" :
+        elif self.touche["pers"] == "s" :
             self.move_pers(0, 1)
 
-        elif self.touche == "d" :         
+        elif self.touche["pers"] == "d" :         
             self.move_pers(1, 0)
                         
-        elif self.touche == "q" :         
+        elif self.touche["pers"] == "q" :         
             self.move_pers(-1, 0)
 
         else :
-            self.r = True
+            self.r["pers"] = True
 
 
 
@@ -288,7 +291,7 @@ class PlayInterface(tk.Frame) :
             self._movepers(n_2move, posorneg, xory, 8)
 
         else :
-            self.r = True
+            self.r["pers"] = True
 
 
     def _todo_after_movepers(self, posorneg, xory) :
@@ -297,13 +300,13 @@ class PlayInterface(tk.Frame) :
         self.coords[xory] += posorneg[xory] * 8 * self.ZOOM
         self.rlcoords[xory] += posorneg[xory]
 
-        if not self.rls :
+        if not self.rls["pers"] :
             self.after(16, self.move_pers, posorneg[0], posorneg[1])
         else :
-            self.r = True
-            if self.touche_save is not None :
-                if self.touche_save.keysym.lower() != self.touche :
-                    self.clavier_press(self.touche_save)
+            self.r["pers"] = True
+            if self.touche_save["pers"] is not None :
+                if self.touche_save["pers"].keysym.lower() != self.touche :
+                    self.clavier_press(self.touche_save["pers"])
 
 
     def _movepers(self, n_2move, posorneg, xory, nb) :
@@ -345,13 +348,13 @@ class PlayInterface(tk.Frame) :
         self.pos_bgrl[xory] += posorneg[xory] * self.ZOOM *4
         self.play_canvas.coords(self.bg, self.pos_bgrl[0], self.pos_bgrl[1])
 
-        if not self.rls :
+        if not self.rls["cam"] :
             self.after(16, self._movebg, posorneg, xory)
         else :
-            self.r_bg = True
-            if self.touche_save is not None :
-                if self.touche_save.keysym.lower() != self.touche :
-                    self.clavier_press(self.touche_save)
+            self.r["cam"] = True
+            if self.touche_save["cam"] is not None :
+                if self.touche_save["cam"].keysym.lower() != self.touche :
+                    self.clavier_press(self.touche_save["cam"])
 
 
 
@@ -360,19 +363,25 @@ class PlayInterface(tk.Frame) :
 
     def clavier_release(self, event):
         
-        self.rls = True
+        if event.keysym.lower() in "zqsd" :
+            self.rls["pers"] = True
 
-        if self.touche_save is not None :
-            if event.keysym.lower() == self.touche_save.keysym.lower() :
-                self.touche_save = None
+            if self.touche_save["pers"] is not None :
+                if event.keysym.lower() == self.touche_save["pers"].keysym.lower() :
+                    self.touche_save["pers"] = None
+        
+        elif event.keysym.lower() in "olmk" :
+            self.rls["cam"] = True
+
+            if self.touche_save["cam"] is not None :
+                if event.keysym.lower() == self.touche_save["cam"].keysym.lower() :
+                    self.touche_save["cam"] = None
+
+
         
 
 
         
-
-
-        
-
 
 
 
