@@ -301,7 +301,7 @@ class PlayInterface(tk.Frame) :
         self.rlcoords[xory] += posorneg[xory]
 
         if not self.rls["pers"] :
-            self.after(16, self.move_pers, posorneg[0], posorneg[1])
+            self.after(6, self.move_pers, posorneg[0], posorneg[1])
         else :
             self.r["pers"] = True
             if self.touche_save["pers"] is not None :
@@ -316,9 +316,9 @@ class PlayInterface(tk.Frame) :
         n_2move[xory] += posorneg[xory] * self.ZOOM
         nb -= 1
         if nb != 0 :
-            self.after(16, self._movepers, n_2move, posorneg, xory, nb)
+            self.after(12, self._movepers, n_2move, posorneg, xory, nb)
         else :
-            self.after(8, self._todo_after_movepers, posorneg, xory)
+            self.after(6, self._todo_after_movepers, posorneg, xory)
 
 
 
