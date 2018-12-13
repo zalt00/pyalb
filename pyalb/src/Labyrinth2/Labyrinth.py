@@ -64,6 +64,63 @@ def create_bg(choosen_map) :
 ####### FIN DEF CREAT_BG #######
 
 
+class Root(tk.Tk) :
+
+    def __init__(self) :
+
+        super().__init__()
+
+        self.dt_pages = dict()
+
+        self.com = dict()
+
+    def change_page(self, actual, new, command=None) :
+        
+        self.dt_pages[actual].pack_forget()
+        self.dt_pages[new].pack(fill="both")
+        
+
+
+
+
+
+
+class MainMenuInterface(tk.Frame) :
+
+    def __init__(self, root, **kwargs):
+        
+        tk.Frame.__init__(self, root, **kwargs)
+
+
+        self.root = root
+
+        self.menu_map_dis = [a[7:] for a in glob("Cartes/*")]
+        self.menu_label = tk.Label(self, text="S\u00E9lectionnez une carte parmi celles-ci :")
+
+
+        self.menu_button = tk.Button(self, text="Valider", command=self.get_map)
+
+
+        self.menu_liste = tk.Listbox(self, selectmode=tk.SINGLE, height=len(self.menu_map_dis)+1, width=35)
+        i = 1
+        for carte in self.menu_map_dis :
+            self.menu_liste.insert(i, carte)
+            i += 1
+
+        self.menu_label.pack()
+        self.menu_liste.pack()
+        self.menu_button.pack(side=tk.RIGHT)
+
+
+
+    def get_map (self) :
+
+        if self.menu_liste.curselection() != () :
+            self.root.com["carte"] = self.menu_liste.get(self.menu_liste.curselection()[0])
+            self.root.change_page("main menu", "in game")
+
+            self.root.dt_pages["in game"].play()
+
 
 
 
@@ -72,8 +129,10 @@ class PlayInterface(tk.Frame) :
 
     def __init__(self, root, **kwargs) :
 
+
+        self.root = root
+
         tk.Frame.__init__(self, root, width=0, height=0, **kwargs)
-        self.pack(fill=tk.BOTH)
         
         self.fenetre = tk.Frame(self, borderwidth=2, relief=tk.FLAT)
         self.fenetre.pack()
@@ -85,18 +144,7 @@ class PlayInterface(tk.Frame) :
         self.coords = [self.psimg(4),self.psimg(2)]
         self.rlcoords = [4,2]
 
-        self.menu_map_dis = [a[7:] for a in glob("Cartes/*")]
-        self.menu_label = tk.Label(self.fenetre, text="S\u00E9lectionnez une carte parmi celles-ci :")
 
-
-        self.menu_button = tk.Button(self.fenetre, text="Valider", command=self.get_map)
-
-
-        self.menu_liste = tk.Listbox(self.fenetre, selectmode=tk.SINGLE, height=len(self.menu_map_dis)+1, width=35)
-        i = 1
-        for carte in self.menu_map_dis :
-            self.menu_liste.insert(i, carte)
-            i += 1
 
 
         self.r = {"pers" : True, "cam" : True}
@@ -108,35 +156,23 @@ class PlayInterface(tk.Frame) :
         self.dirsave = None
 
 
-        self.pack_menu()
-
-
-
-    def pack_menu(self) :
-
-        self.play_canvas.pack_forget()
-
-        self.menu_label.pack()
-        self.menu_liste.pack()
-        self.menu_button.pack(side=tk.RIGHT)
-
-
-
-    def pack_play(self) :
-
-        global fenetre
-        
-        fenetre.attributes('-fullscreen',True)
-
-        self.menu_label.pack_forget()
-        self.menu_button.pack_forget()
-        self.menu_liste.pack_forget()
-
-        global create_bg
-        width_tab, height_tab, self.list_globale = create_bg(self.carte)
-
         self.fenetre["borderwidth"] = 16
         self.fenetre["background"] = "#bbbbbb"
+
+        
+        self.play_canvas.focus_set()
+        self.play_canvas.bind("<KeyPress>", self.clavier_press)
+        self.play_canvas.bind("<KeyRelease>", self.clavier_release)
+        self.play_canvas.pack()
+
+
+    def play(self) :
+
+        
+        self.root.attributes('-fullscreen',True)
+
+        global create_bg
+        width_tab, height_tab, self.list_globale = create_bg(self.root.com["carte"])
 
         self.play_canvas["width"] = width_tab*self.ZOOM
         self.play_canvas["height"] = height_tab*self.ZOOM
@@ -151,17 +187,11 @@ class PlayInterface(tk.Frame) :
         self.pers_img = tk.PhotoImage(file="Images/pers.png").zoom(self.ZOOM, self.ZOOM)
         self.pers = self.play_canvas.create_image(self.psimg(4), self.psimg(2), image=self.pers_img)
 
-        self.play_canvas.focus_set()
-        self.play_canvas.bind("<KeyPress>", self.clavier_press)
-        self.play_canvas.bind("<KeyRelease>", self.clavier_release)
-        self.play_canvas.pack()
+        
 
 
 
-    def get_map (self) :
-        if self.menu_liste.curselection() != () :
-            self.carte = self.menu_liste.get(self.menu_liste.curselection()[0])
-            self.pack_play()
+
 
 
     def psimg (self, pos) :
@@ -387,10 +417,14 @@ class PlayInterface(tk.Frame) :
 
 
 
-fenetre = tk.Tk()
-fenetre.title("Labyrinth")
-interface = PlayInterface(fenetre)
+root = Root()
+root.title("Labyrinth")
+
+root.dt_pages["in game"] = PlayInterface(root)
+root.dt_pages["main menu"] = MainMenuInterface(root)
+
+root.dt_pages["main menu"].pack(fill="both")
 
 print(perf_counter()-t1)
 
-interface.mainloop()
+root.mainloop()
