@@ -5,6 +5,7 @@ t1 = perf_counter()
 
 import numpy as np
 import tkinter as tk
+
 from Images.init_images import LabObj, PNGS, save_img
 from glob import glob
 
@@ -70,14 +71,16 @@ class Root(tk.Tk) :
 
         super().__init__()
 
-        self.dt_pages = dict()
+
+        self.in_game = InGameInterface(self)
+        self.main_menu = MainMenuInterface(self)
 
         self.com = dict()
 
-    def change_page(self, actual, new, command=None) :
+    def change_page(self, actual, new) :
         
-        self.dt_pages[actual].pack_forget()
-        self.dt_pages[new].pack(fill="both")
+        getattr(self, actual).pack_forget()
+        getattr(self, new).pack(fill="both")
         
 
 
@@ -117,15 +120,15 @@ class MainMenuInterface(tk.Frame) :
 
         if self.menu_liste.curselection() != () :
             self.root.com["carte"] = self.menu_liste.get(self.menu_liste.curselection()[0])
-            self.root.change_page("main menu", "in game")
+            self.root.change_page("main_menu", "in_game")
 
-            self.root.dt_pages["in game"].play()
-
-
+            self.root.in_game.play()
 
 
 
-class PlayInterface(tk.Frame) :
+
+
+class InGameInterface(tk.Frame) :
 
     def __init__(self, root, **kwargs) :
 
@@ -134,12 +137,12 @@ class PlayInterface(tk.Frame) :
 
         tk.Frame.__init__(self, root, width=0, height=0, **kwargs)
         
-        self.fenetre = tk.Frame(self, borderwidth=2, relief=tk.FLAT)
+        self.fenetre = tk.Frame(self, borderwidth=0, background="#bbb")
         self.fenetre.pack()
 
         self.ZOOM = 2
 
-        self.play_canvas = tk.Canvas(self.fenetre, width=0, height=0, background="#bbbbbb")
+        self.play_canvas = tk.Canvas(self.fenetre, width=0, height=0, background="#bbb", highlightthickness=0)
         
         self.coords = [self.psimg(4),self.psimg(2)]
         self.rlcoords = [4,2]
@@ -155,10 +158,6 @@ class PlayInterface(tk.Frame) :
         self.bg2move = 8
         self.dirsave = None
 
-
-        self.fenetre["borderwidth"] = 16
-        self.fenetre["background"] = "#bbbbbb"
-
         
         self.play_canvas.focus_set()
         self.play_canvas.bind("<KeyPress>", self.clavier_press)
@@ -169,7 +168,7 @@ class PlayInterface(tk.Frame) :
     def play(self) :
 
         
-        self.root.attributes('-fullscreen',True)
+        self.root.attributes('-fullscreen', True)
 
         global create_bg
         width_tab, height_tab, self.list_globale = create_bg(self.root.com["carte"])
@@ -420,10 +419,8 @@ class PlayInterface(tk.Frame) :
 root = Root()
 root.title("Labyrinth")
 
-root.dt_pages["in game"] = PlayInterface(root)
-root.dt_pages["main menu"] = MainMenuInterface(root)
+root.main_menu.pack()
 
-root.dt_pages["main menu"].pack(fill="both")
 
 print(perf_counter()-t1)
 
