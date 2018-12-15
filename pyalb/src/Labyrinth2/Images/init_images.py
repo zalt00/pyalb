@@ -9,12 +9,12 @@ from glob import glob
 class LabObj :
     
     
-    def __init__(self, code, tag, app) :
+    def __init__(self, code, tag, app, name) :
         
         self.code = code
         self.tag = tag
         self.app = app
-
+        self.name = name
 
 
 def PNGS (path) :
@@ -36,7 +36,7 @@ def PNGS (path) :
         img_name = image.split("\\")
         img_name = img_name[-1]
         
-        image_obj = LabObj(image_tab, img_name[3:6], img_name[1])
+        image_obj = LabObj(image_tab, img_name[3:6], img_name[1], img_name)
         
         pngs.append(image_obj)
 
@@ -44,7 +44,72 @@ def PNGS (path) :
 
     return pngs
 
+def img_load(name) :
+    image_tab = mpimg.imread(name)
 
-def save_img (img) :
+    if image_tab.shape[2] == 4 :
+            image_tab = image_tab[:,:,:3]
+            
+    if image_tab.dtype == np.float32: # Si le résultat n'est pas un tableau d'entiers
+        image_tab = (image_tab * 255).astype(np.uint8)
 
-    mpimg.imsave("Images/bg.png", img)
+    return image_tab
+
+
+
+def save_img (img, name) :
+
+    mpimg.imsave(name, img)
+
+
+
+
+def create_bg(choosen_map, file_name) :
+
+    if type(choosen_map) == str :
+        with open("./Cartes/{}".format(choosen_map), "r", encoding="utf8") as fichier:
+            carte = fichier.read()
+    
+    else :
+        carte = choosen_map.read()
+
+
+    l = 0
+    list_globale = [[]]
+    list_globale_tab = []
+    list_ligne_tab = list()
+
+
+
+    pngs = PNGS("Images/PNGS")
+
+    for caract in carte :
+        
+        if caract == "\n" :
+            
+
+            
+            list_globale_tab.append(np.concatenate(list_ligne_tab, axis=1))
+            list_globale.append([])
+            list_ligne_tab = []
+            l += 1
+            
+        else :
+            
+            for tile in pngs :
+                
+                if caract == tile.app:
+                    list_globale[l].append(tile)
+                    list_ligne_tab.append(tile.code)
+            
+
+
+    tab = np.concatenate(list_globale_tab, axis=0)
+
+
+    save_img(tab, file_name)
+
+
+    height_tab = tab.shape[0]
+    width_tab = tab.shape[1]
+    return width_tab, height_tab, list_globale

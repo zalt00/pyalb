@@ -6,63 +6,9 @@ t1 = perf_counter()
 import numpy as np
 import tkinter as tk
 
-from Images.init_images import LabObj, PNGS, save_img
+from Images.init_images import LabObj, PNGS, save_img, create_bg
 from glob import glob
 
-
-###### [1] CREATION DU BACKGROUND ######
-
-t1 = perf_counter()
-def create_bg(choosen_map) :
-
-
-    with open("./Cartes/{}".format(choosen_map), "r", encoding="utf8") as fichier:
-        carte = fichier.read()
-
-
-    l = 0
-    list_globale = [[]]
-    list_globale_tab = []
-    list_ligne_tab = list()
-
-
-
-    pngs = PNGS("Images/PNGS")
-
-    for caract in carte :
-        
-        if caract == "\n" :
-            
-
-            
-            list_globale_tab.append(np.concatenate(list_ligne_tab, axis=1))
-            list_globale.append([])
-            list_ligne_tab = []
-            l += 1
-            
-        else :
-            
-            for tile in pngs :
-                
-                if caract == tile.app:
-                    list_globale[l].append(tile)
-                    list_ligne_tab.append(tile.code)
-            
-
-
-    tab = np.concatenate(list_globale_tab, axis=0)
-
-
-    save_img(tab)
-
-
-    height_tab = tab.shape[0]
-    width_tab = tab.shape[1]
-    return width_tab, height_tab, list_globale
-
-
-
-####### FIN DEF CREAT_BG #######
 
 
 class Root(tk.Tk) :
@@ -171,7 +117,7 @@ class InGameInterface(tk.Frame) :
         self.root.attributes('-fullscreen', True)
 
         global create_bg
-        width_tab, height_tab, self.list_globale = create_bg(self.root.com["carte"])
+        width_tab, height_tab, self.list_globale = create_bg(self.root.com["carte"], "Images/bg.png")
 
         self.play_canvas["width"] = width_tab*self.ZOOM
         self.play_canvas["height"] = height_tab*self.ZOOM
