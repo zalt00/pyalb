@@ -57,14 +57,17 @@ def img_load(name) :
 
 
 
-def save_img (img, name) :
+def save_img (img, name, var=None) :
+
 
     mpimg.imsave(name, img)
 
+    if var is not None :
+        var.add(name)
 
 
 
-def create_bg(choosen_map, file_name) :
+def create_bg(choosen_map, file_name, var=None) :
 
     if type(choosen_map) == str :
         with open("./Cartes/{}".format(choosen_map), "r", encoding="utf8") as fichier:
@@ -107,7 +110,7 @@ def create_bg(choosen_map, file_name) :
     tab = np.concatenate(list_globale_tab, axis=0)
 
 
-    save_img(tab, file_name)
+    save_img(tab, file_name, var)
 
 
     height_tab = tab.shape[0]

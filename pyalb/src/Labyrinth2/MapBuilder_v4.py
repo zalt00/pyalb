@@ -2,15 +2,25 @@
 
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
-import json
+from json import load as jsload
 from glob import glob
 import numpy as np
 from time import perf_counter
 from Images.init_images import LabObj, PNGS, save_img, create_bg, img_load
 import logging as lg
 from logging.handlers import RotatingFileHandler
+import os
+
+
+
+CWD = "C:/Users/Hélène Le Berre/Documents/Programation/pyalb/pyalb/src/Labyrinth2"
+os.chdir(CWD)
+
+
 
 SHAPES_TAB = (320, 320, 3) # dimension de la "zone de dessin", les deux premier sont deux multiples de 16, le dernier est 3
+
+temps = set() # ensemble des fichiers temporaires
 
 
 logger = lg.getLogger()
@@ -48,20 +58,22 @@ class Interface(tk.Frame) :
         tk.Frame.__init__(self, root, **kwargs)
 
         with open("control_mapbuilder.json", "r", encoding="utf8") as data :
-            self.ctrls = json.load(data)
+            self.ctrls = jsload(data)
 
 
         self.car = dict() # permet de conserver les caractères après déassignement de toutes les clefs du self.imgs
         self.tab = np.zeros(shapes_tab, dtype=np.uint8) # tab pour tableau
 
-        file_name = askopenfilename(title="Ouvrir une carte où appuyez sur Annuler",filetypes=[('txt files','.txt'),('all files','.*')])
+        file_name = askopenfilename(master=self, title="Ouvrir une carte où appuyez sur Annuler",filetypes=[('txt files','.txt'),('all files','.*')])
+
+        root.attributes('-fullscreen', True)
 
         try:
             with open(file_name, "r", encoding="utf8") as fch :
                 width, height, lt = create_bg(fch, "Images/bg_mpbuilder.png")
 
-        except FileNotFoundError as e:
-            logger.info("file {} not found".format(e.filename))
+        except FileNotFoundError:
+            logger.info("File {} not found".format(file_name))
 
 
         else:
@@ -82,9 +94,11 @@ class Interface(tk.Frame) :
                 self.tab = tab2
             else :
                 self.tab[:height, :width, :3] = tab2
+                logger.warning("New tab's shape doesn't match with SHAPE_TAB")
 
         
-        save_img(self.tab, "Images/bg_mpbuilder.png")
+        save_img(self.tab, "Images/bg_mpbuilder.png", temps)
+    
 
         self.imgs = dict()
 
@@ -158,17 +172,32 @@ class Interface(tk.Frame) :
                 pass
             
             option = {
-                "Escape" : self.refresh_bg,
+                "Escape" : self.toplevel_aff,
                 "Up" : lambda : self._move_cursor([0, -16]),
                 "Down" : lambda : self._move_cursor([0, 16]),
                 "Left" : lambda : self._move_cursor([-16, 0]),
                 "Right" : lambda : self._move_cursor([16, 0]),
-                "Return" : self.tostr,
+                "Return" : self.refresh_bg,
                 "Delete" : self.delete
             }
 
             option.get(touche, todo_else)()
 
+
+    def toplevel_aff(self) :
+
+        self.toplvl = tk.Toplevel(self)
+
+        self.butlvl = tk.Button(self.toplvl, text="Save as", command=self.tostr)
+        self.butlvl.grid(column=0, row=0)
+        
+        self.labellvl = tk.Label(self.toplvl,
+            text="Controls are :\n{}".format("\n".join(["{} : {}".format(a, b) for a, b in self.ctrls.items()]))
+        )
+        self.labellvl.grid(row=1, column=0)
+
+        self.butlvlquit = tk.Button(self.toplvl, text="Quit", command=self.quit)
+        self.butlvlquit.grid(row=0, column=1)
 
 
     def _move_cursor(self, way) :
@@ -225,7 +254,7 @@ class Interface(tk.Frame) :
         xb, yb = (x-8)//16+1, (y-8)//16+1
         tab = np.zeros((yb, xb), dtype=np.str)
 
-        logger.info(" shapes of the saved tab : {}".format((xb, yb)))
+        logger.info("Shapes of the saved tab : {}".format((xb, yb)))
 
         for key, letter in self.car.items() :
             keyb = tuple([(k-8)//16 for k in key])
@@ -238,12 +267,19 @@ class Interface(tk.Frame) :
 
         with open(file_name, "w", encoding="utf8") as map_file :
             map_file.write(tab_str)
+
+        self.toplvl.destroy()
         
 
 
 
 root = tk.Tk()
 
+
 inter = Interface(root, SHAPES_TAB)
 inter.pack(fill="both", expand=True)
 root.mainloop()
+
+
+for temp in temps :
+    os.remove(temp)

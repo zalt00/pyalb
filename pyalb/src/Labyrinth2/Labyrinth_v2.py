@@ -5,9 +5,32 @@ t1 = perf_counter()
 
 import numpy as np
 import tkinter as tk
-
 from Images.init_images import LabObj, PNGS, save_img, create_bg
 from glob import glob
+import os
+import logging as lg
+from logging.handlers import RotatingFileHandler
+
+CWD = "C:/Users/Hélène Le Berre/Documents/Programation/pyalb/pyalb/src/Labyrinth2"
+os.chdir(CWD)
+
+
+temps = set() # fichiers temporaires
+
+
+
+logger = lg.getLogger()
+logger.setLevel(lg.DEBUG)
+
+formatter = lg.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+
+file_handler = RotatingFileHandler('labyrinth.log', 'a', 1000000, 1)
+
+file_handler.setLevel(lg.INFO)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+
 
 
 
@@ -68,6 +91,8 @@ class MainMenuInterface(tk.Frame) :
             self.root.com["carte"] = self.menu_liste.get(self.menu_liste.curselection()[0])
             self.root.change_page("main_menu", "in_game")
 
+            logger.info('Game started with the map called "{}".'.format(self.root.com["carte"]))
+
             self.root.in_game.play()
 
 
@@ -117,7 +142,7 @@ class InGameInterface(tk.Frame) :
         self.root.attributes('-fullscreen', True)
 
         global create_bg
-        width_tab, height_tab, self.list_globale = create_bg(self.root.com["carte"], "Images/bg.png")
+        width_tab, height_tab, self.list_globale = create_bg(self.root.com["carte"], "Images/bg.png", temps)
 
         self.play_canvas["width"] = width_tab*self.ZOOM
         self.play_canvas["height"] = height_tab*self.ZOOM
@@ -266,9 +291,32 @@ class InGameInterface(tk.Frame) :
             self._movepers(n_2move, posorneg, xory, 8)
 
         else :
+            if not self.rls["pers"] :
+                self.after(50, self._mur_keytest)
+            else :
+                self.r["pers"] = True
+                if self.touche_save["pers"] is not None :
+                    if self.touche_save["pers"].keysym.lower() != self.touche :
+                        self.clavier_press(self.touche_save["pers"])
+            
+
+
+    def _mur_keytest(self) : 
+        "permet d'eviter de devoir s'arreter apres etre entre dans un mur"
+
+        if self.rls["pers"] :
             self.r["pers"] = True
+            if self.touche_save["pers"] is not None :
+                if self.touche_save["pers"].keysym.lower() != self.touche :
+                    self.clavier_press(self.touche_save["pers"])
+
+        else :
+            self.after(50, self._mur_keytest)
+        
 
 
+
+    
     def _todo_after_movepers(self, posorneg, xory) :
         
 
@@ -368,6 +416,9 @@ root.title("Labyrinth")
 root.main_menu.pack()
 
 
-print(perf_counter()-t1)
+logger.info("This programme has taken {} to setup.".format(perf_counter()-t1))
 
 root.mainloop()
+
+for temp in temps :
+    os.remove(temp)
