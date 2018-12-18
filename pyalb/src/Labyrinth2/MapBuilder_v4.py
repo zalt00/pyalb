@@ -13,7 +13,7 @@ import os
 
 
 
-CWD = "C:/Users/Hélène Le Berre/Documents/Programation/pyalb/pyalb/src/Labyrinth2"
+CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
 os.chdir(CWD)
 
 
@@ -64,7 +64,7 @@ class Interface(tk.Frame) :
         self.car = dict() # permet de conserver les caractères après déassignement de toutes les clefs du self.imgs
         self.tab = np.zeros(shapes_tab, dtype=np.uint8) # tab pour tableau
 
-        file_name = askopenfilename(master=self, title="Ouvrir une carte où appuyez sur Annuler",filetypes=[('txt files','.txt'),('all files','.*')])
+        file_name = askopenfilename(master=self, title="Ouvrir une carte où appuyez sur Annuler", filetypes=[('txt files','.txt'),('all files','.*')])
 
         root.attributes('-fullscreen', True)
 
@@ -132,6 +132,7 @@ class Interface(tk.Frame) :
 
         self.black = np.zeros((8,8, 3), dtype=np.uint8)
 
+        self.ctrls_4label = "Controls are :\n{}".format("\n".join(["{} : {}".format(a, b) for a, b in self.ctrls.items()]))
 
 
 
@@ -191,9 +192,7 @@ class Interface(tk.Frame) :
         self.butlvl = tk.Button(self.toplvl, text="Save as", command=self.tostr)
         self.butlvl.grid(column=0, row=0)
         
-        self.labellvl = tk.Label(self.toplvl,
-            text="Controls are :\n{}".format("\n".join(["{} : {}".format(a, b) for a, b in self.ctrls.items()]))
-        )
+        self.labellvl = tk.Label(self.toplvl, text=self.ctrls_4label)
         self.labellvl.grid(row=1, column=0)
 
         self.butlvlquit = tk.Button(self.toplvl, text="Quit", command=self.quit)

@@ -70,7 +70,7 @@ def save_img (img, name, var=None) :
 def create_bg(choosen_map, file_name, var=None) :
 
     if type(choosen_map) == str :
-        with open("./Cartes/{}".format(choosen_map), "r", encoding="utf8") as fichier:
+        with open(choosen_map, "r", encoding="utf8") as fichier:
             carte = fichier.read()
     
     else :

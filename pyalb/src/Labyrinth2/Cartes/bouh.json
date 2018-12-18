@@ -1,0 +1,29 @@
+{
+
+    "map_path" : "Cartes/HEY.txt",
+
+    "pers_x" : 1,
+    "pers_y" : 1,
+
+
+    "doors" : {
+
+        "door1" : {
+
+            "door" : {
+                "pos_x" : 5,
+                "pos_y" : 6,
+
+                "app" : "Images/PNGS/m┃_mur.png"
+        
+            },
+
+            "button" : {
+                "pos_x" : 7,
+                "pos_y" : 9,
+
+                "app" : "Images/PNGS/_D_nth.png"
+            }
+        }
+    }
+}

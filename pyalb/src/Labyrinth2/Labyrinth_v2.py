@@ -10,8 +10,10 @@ from glob import glob
 import os
 import logging as lg
 from logging.handlers import RotatingFileHandler
+from json import load as jsload
 
-CWD = "C:/Users/Hélène Le Berre/Documents/Programation/pyalb/pyalb/src/Labyrinth2"
+
+CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
 os.chdir(CWD)
 
 
@@ -46,10 +48,11 @@ class Root(tk.Tk) :
 
         self.com = dict()
 
+
     def change_page(self, actual, new) :
         
         getattr(self, actual).pack_forget()
-        getattr(self, new).pack(fill="both")
+        getattr(self, new).pack(fill="both", expand=True)
         
 
 
@@ -65,8 +68,17 @@ class MainMenuInterface(tk.Frame) :
 
 
         self.root = root
+        
 
-        self.menu_map_dis = [a[7:] for a in glob("Cartes/*")]
+
+        self.menu_map_dis = dict()
+
+        for a in glob("Cartes/*.json") :
+            
+            b = a[7:-5]
+            self.menu_map_dis[b] = a
+        
+
         self.menu_label = tk.Label(self, text="S\u00E9lectionnez une carte parmi celles-ci :")
 
 
@@ -75,7 +87,7 @@ class MainMenuInterface(tk.Frame) :
 
         self.menu_liste = tk.Listbox(self, selectmode=tk.SINGLE, height=len(self.menu_map_dis)+1, width=35)
         i = 1
-        for carte in self.menu_map_dis :
+        for carte in self.menu_map_dis.keys() :
             self.menu_liste.insert(i, carte)
             i += 1
 
@@ -88,10 +100,18 @@ class MainMenuInterface(tk.Frame) :
     def get_map (self) :
 
         if self.menu_liste.curselection() != () :
-            self.root.com["carte"] = self.menu_liste.get(self.menu_liste.curselection()[0])
+
+            a = self.menu_liste.get(self.menu_liste.curselection()[0])
+            json_path = self.menu_map_dis[a]
+
+
+            with open(json_path, "r", encoding="utf8") as data :
+                data_dict = jsload(data) # jsload -> json.load
+
+            self.root.com["data"] = data_dict
             self.root.change_page("main_menu", "in_game")
 
-            logger.info('Game started with the map called "{}".'.format(self.root.com["carte"]))
+            logger.info('Game started with the map called "{}".'.format(json_path))
 
             self.root.in_game.play()
 
@@ -109,31 +129,29 @@ class InGameInterface(tk.Frame) :
         tk.Frame.__init__(self, root, width=0, height=0, **kwargs)
         
         self.fenetre = tk.Frame(self, borderwidth=0, background="#bbb")
-        self.fenetre.pack()
+        self.fenetre.pack(expand=True, fill="both")
 
         self.ZOOM = 2
 
-        self.play_canvas = tk.Canvas(self.fenetre, width=0, height=0, background="#bbb", highlightthickness=0)
+        self.play_canvas = tk.Canvas(self.fenetre, height=self["height"], background="#bbb", highlightthickness=0)
         
-        self.coords = [self.psimg(4),self.psimg(2)]
-        self.rlcoords = [4,2]
+        self.coords = [0, 0]
+        self.rlcoords = [0, 0]
 
 
 
 
-        self.r = {"pers" : True, "cam" : True}
+        self.r = {"pers" : True, "cam" : True} # permet d'eviter l'appuyage prolongé de windows sur une touche
         self.rls = {"pers" : True, "cam" : True} # passe en True quand KeyRelease
-        self.touche_save = {"pers" : None, "cam" : None}
+        self.touche_save = {"pers" : None, "cam" : None} # permet de faire des virages fluides, sans pause
         self.touche = {"pers" : None, "cam" : None}
-
-        self.bg2move = 8
-        self.dirsave = None
 
         
         self.play_canvas.focus_set()
         self.play_canvas.bind("<KeyPress>", self.clavier_press)
         self.play_canvas.bind("<KeyRelease>", self.clavier_release)
-        self.play_canvas.pack()
+        self.play_canvas.pack(expand=True, fill="both")
+
 
 
     def play(self) :
@@ -141,8 +159,17 @@ class InGameInterface(tk.Frame) :
         
         self.root.attributes('-fullscreen', True)
 
+        carte = self.root.com["data"]["map_path"]
+
+        self.rlcoords[0] = self.root.com["data"]["pers_x"]
+        self.rlcoords[1] = self.root.com["data"]["pers_y"]
+
+        self.coords[0] = self.psimg(self.root.com["data"]["pers_x"])
+        self.coords[1] = self.psimg(self.root.com["data"]["pers_y"])
+
+
         global create_bg
-        width_tab, height_tab, self.list_globale = create_bg(self.root.com["carte"], "Images/bg.png", temps)
+        width_tab, height_tab, self.list_globale = create_bg(carte, "Images/bg.png", temps)
 
         self.play_canvas["width"] = width_tab*self.ZOOM
         self.play_canvas["height"] = height_tab*self.ZOOM
@@ -154,23 +181,31 @@ class InGameInterface(tk.Frame) :
         self.bg_img = tk.PhotoImage(file="Images/bg.png").zoom(self.ZOOM, self.ZOOM)
         self.bg = self.play_canvas.create_image(self.pos_bgrl[0], self.pos_bgrl[1], image=self.bg_img)
 
+
+        self.doors = dict() # pour raccourcir
+
+        for name, door in self.root.com["data"]["doors"].items() :
+            
+            self.doors[name] = door
+
+            self.doors[name]["door"]["img"] = tk.PhotoImage(file=self.doors[name]["door"]["app"]).zoom(self.ZOOM)
+            x, y = self.doors[name]["door"]["pos_x"], self.doors[name]["door"]["pos_y"]
+            self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=self.doors[name]["door"]["img"])
+
+
+            self.doors[name]["button"]["img"] = tk.PhotoImage(file=self.doors[name]["button"]["app"]).zoom(self.ZOOM)
+            x, y = self.doors[name]["button"]["pos_x"], self.doors[name]["button"]["pos_y"]
+            self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=self.doors[name]["button"]["img"])
+
+
+
+
         self.pers_img = tk.PhotoImage(file="Images/pers.png").zoom(self.ZOOM, self.ZOOM)
-        self.pers = self.play_canvas.create_image(self.psimg(4), self.psimg(2), image=self.pers_img)
-
-        
-
-
-
-
+        self.pers = self.play_canvas.create_image(self.coords[0], self.coords[1], image=self.pers_img)
 
 
     def psimg (self, pos) :
         return (4+8*pos)*self.ZOOM
-
-    def bgimg(self, pos) :
-        return (8*pos)*self.ZOOM
-
-
 
 
 
@@ -302,7 +337,7 @@ class InGameInterface(tk.Frame) :
 
 
     def _mur_keytest(self) : 
-        "permet d'eviter de devoir s'arreter apres etre entre dans un mur"
+        "Permet d'\u00E9viter de devoir s'arr\u00EAter apres \u00EAtre entr\u00E9 dans un mur."
 
         if self.rls["pers"] :
             self.r["pers"] = True
