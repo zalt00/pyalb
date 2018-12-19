@@ -13,7 +13,7 @@ from logging.handlers import RotatingFileHandler
 from json import load as jsload
 
 
-CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
+CWD = r"C:\Users\Hélène Le Berre\Documents\Programation\pyalb\pyalb\src\Labyrinth2"
 os.chdir(CWD)
 
 
@@ -138,7 +138,7 @@ class InGameInterface(tk.Frame) :
         self.coords = [0, 0]
         self.rlcoords = [0, 0]
 
-
+        self.pos_bgrl = [0, 0]
 
 
         self.r = {"pers" : True, "cam" : True} # permet d'eviter l'appuyage prolongé de windows sur une touche
@@ -171,11 +171,8 @@ class InGameInterface(tk.Frame) :
         global create_bg
         width_tab, height_tab, self.list_globale = create_bg(carte, "Images/bg.png", temps)
 
-        self.play_canvas["width"] = width_tab*self.ZOOM
-        self.play_canvas["height"] = height_tab*self.ZOOM
-
-        self.pos_bgrl = [width_tab*self.ZOOM//2, height_tab*self.ZOOM//2]
-
+        self.pos_bgrl[0] = width_tab*self.ZOOM//2
+        self.pos_bgrl[1] = height_tab*self.ZOOM//2
 
 
         self.bg_img = tk.PhotoImage(file="Images/bg.png").zoom(self.ZOOM, self.ZOOM)
@@ -183,6 +180,9 @@ class InGameInterface(tk.Frame) :
 
 
         self.doors = dict() # pour raccourcir
+        self.dr = dict() # dictionnaire des positions des portes
+        self.act = dict()
+
 
         for name, door in self.root.com["data"]["doors"].items() :
             
@@ -190,18 +190,57 @@ class InGameInterface(tk.Frame) :
 
             self.doors[name]["door"]["img"] = tk.PhotoImage(file=self.doors[name]["door"]["app"]).zoom(self.ZOOM)
             x, y = self.doors[name]["door"]["pos_x"], self.doors[name]["door"]["pos_y"]
-            self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=self.doors[name]["door"]["img"])
+
+            self.doors[name]["door"]["img_pos"] = [self.psimg(x), self.psimg(y)]
+            # ^ position sur l'image, evite une desyncro avec le mouvement de la cam
+            self.doors[name]["door"]["obj"] = (
+                self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=self.doors[name]["door"]["img"])
+            )
+            self.dr[x, y] = name
+            self.act[x, y] = lambda self, pos : self._door_isactivate(self.dr[pos])
 
 
             self.doors[name]["button"]["img"] = tk.PhotoImage(file=self.doors[name]["button"]["app"]).zoom(self.ZOOM)
             x, y = self.doors[name]["button"]["pos_x"], self.doors[name]["button"]["pos_y"]
-            self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=self.doors[name]["button"]["img"])
 
+            self.doors[name]["button"]["img_pos"] = [self.psimg(x), self.psimg(y)]
+            self.doors[name]["button"]["obj"] =(
+                self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=self.doors[name]["button"]["img"])
+            )
 
+            self.dr[x, y] = name
+            self.act[x, y] = lambda self, pos : self._but_activate(self.dr[pos])
+
+            
 
 
         self.pers_img = tk.PhotoImage(file="Images/pers.png").zoom(self.ZOOM, self.ZOOM)
         self.pers = self.play_canvas.create_image(self.coords[0], self.coords[1], image=self.pers_img)
+
+
+
+    def _but_activate(self, door_pair_name) :
+
+        if self.doors[door_pair_name].get("button_activate/disactivate", False) :
+
+            if self.doors[door_pair_name]["activated"] :
+                self.doors[door_pair_name]["activated"] = 0
+            else :
+                self.doors[door_pair_name]["activated"] = 1
+
+
+        else :
+            self.doors[door_pair_name]["activated"] = 1 # activate -> 0:porte fermee, 1:porte ouverte
+        return True
+
+    def _door_isactivate(self, door_pair_name) :
+
+        if self.doors[door_pair_name]["activated"] :
+            return True
+        
+        else :
+            return False
+
 
 
     def psimg (self, pos) :
@@ -288,31 +327,43 @@ class InGameInterface(tk.Frame) :
         posorneg = x, y # positive or negative
 
         if x > 0 :
-            if self.list_globale[self.rlcoords[1]][self.rlcoords[0]+1].tag != "mur" :
+            xb, yb = self.rlcoords[0]+1, self.rlcoords[1]
+            if self.list_globale[yb][xb].tag != "mur" and (
+                self.act.get((xb, yb), lambda *args : True)(self, (xb, yb))
+            ):
 
                 n_2move = [2, 0] # x puis y
                 xory = 0 # 0 pour x, 1 pour y
             else :
                 mur = True
         
-        if x < 0 :
-            if self.list_globale[self.rlcoords[1]][self.rlcoords[0]-1].tag != "mur" :
+        elif x < 0 :
+            xb, yb = self.rlcoords[0]-1, self.rlcoords[1]
+            if self.list_globale[yb][xb].tag != "mur" and (
+                self.act.get((xb, yb), lambda *args : True)(self, (xb, yb))
+            ):
 
                 n_2move = [-2, 0] # x puis y
                 xory = 0 # 0 pour x, 1 pour y
             else :
                 mur = True
 
-        if y > 0 :
-            if self.list_globale[self.rlcoords[1]+1][self.rlcoords[0]].tag != "mur" :
+        elif y > 0 :
+            xb, yb = self.rlcoords[0], self.rlcoords[1]+1
+            if self.list_globale[yb][xb].tag != "mur" and (
+                self.act.get((xb, yb), lambda *args : True)(self, (xb, yb))
+            ):
 
                 n_2move = [0, 2] # x puis y
                 xory = 1 # 0 pour x, 1 pour y
             else :
                 mur = True
 
-        if y < 0 :
-            if self.list_globale[self.rlcoords[1]-1][self.rlcoords[0]].tag != "mur" :
+        elif y < 0 :
+            xb, yb = self.rlcoords[0], self.rlcoords[1]-1
+            if self.list_globale[yb][xb].tag != "mur" and (
+                self.act.get((xb, yb), lambda *args : True)(self, (xb, yb))
+            ):
 
                 n_2move = [0, -2] # x puis y
                 xory = 1 # 0 pour x, 1 pour y
@@ -405,6 +456,18 @@ class InGameInterface(tk.Frame) :
 
         self.pos_bgrl[xory] += posorneg[xory] * self.ZOOM *4
         self.play_canvas.coords(self.bg, self.pos_bgrl[0], self.pos_bgrl[1])
+
+        for name in self.doors : # syncro des portes et bouttons
+            
+            for ele in ["door", "button"] : # ele -> door or button
+
+                self.doors[name][ele]["img_pos"][xory] += posorneg[xory] * self.ZOOM *4
+                x = self.doors[name][ele]["img_pos"][0]
+                y = self.doors[name][ele]["img_pos"][1]
+
+                self.play_canvas.coords(self.doors[name][ele]["obj"], x, y)
+
+        
 
         if not self.rls["cam"] :
             self.after(16, self._movebg, posorneg, xory)

@@ -8,10 +8,13 @@
 
     "doors" : {
 
-        "door1" : {
+        "door_name" : {
+            
+            "activated" : 0,
+            "button_activate/disactivate" : 1,
 
             "door" : {
-                "pos_x" : 5,
+                "pos_x" : 6,
                 "pos_y" : 6,
 
                 "app" : "Images/PNGS/m┃_mur.png"
@@ -19,10 +22,32 @@
             },
 
             "button" : {
-                "pos_x" : 7,
+                "pos_x" : 8,
                 "pos_y" : 9,
 
                 "app" : "Images/PNGS/_D_nth.png"
+            }
+        },
+
+
+
+        "bouh" : {
+
+            "activated" : 0,
+            "button_activate/disactivate" : 1,
+
+            "door" : {
+                "pos_x" : 12,
+                "pos_y" : 14,
+
+                "app" : "Images/PNGS/m╋_mur.png"
+            },
+
+            "button" : {
+                "pos_x" : 3,
+                "pos_y" : 2,
+
+                "app" : "Images/PNGS/m┃_mur.png"
             }
         }
     }
