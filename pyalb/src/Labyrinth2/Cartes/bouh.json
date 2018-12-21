@@ -1,53 +1,33 @@
 {
 
-    "map_path" : "Cartes/HEY.txt",
+    "map_path" : "Cartes/a.txt",
 
     "pers_x" : 1,
     "pers_y" : 1,
 
+    "entities" :{
+        "door" : {
 
-    "doors" : {
+            "door1" : {
 
-        "door_name" : {
-            
-            "activated" : 0,
-            "button_activate/disactivate" : 1,
+                "activated" : 0,
+                "coords" : [7, 5],
+                "app_on" : "Images/PNGS/_ _nth.png",
+                "app_off" : "Images/PNGS/m━_mur.png"
 
-            "door" : {
-                "pos_x" : 6,
-                "pos_y" : 6,
-
-                "app" : "Images/PNGS/m┃_mur.png"
-        
-            },
-
-            "button" : {
-                "pos_x" : 8,
-                "pos_y" : 9,
-
-                "app" : "Images/PNGS/_D_nth.png"
             }
         },
 
+        "button" : {
 
+            "button1" : {
 
-        "bouh" : {
-
-            "activated" : 0,
-            "button_activate/disactivate" : 1,
-
-            "door" : {
-                "pos_x" : 12,
-                "pos_y" : 14,
-
-                "app" : "Images/PNGS/m╋_mur.png"
-            },
-
-            "button" : {
-                "pos_x" : 3,
-                "pos_y" : 2,
-
-                "app" : "Images/PNGS/m┃_mur.png"
+                "activated" : 0,
+                "rule" : "switch",
+                "args" : "door/door1",
+                "coords" : [3, 1],
+                "app_on" : "Images/PNGS/_C_nth.png",
+                "app_off" : "Images/PNGS/_D_nth.png"
             }
         }
     }

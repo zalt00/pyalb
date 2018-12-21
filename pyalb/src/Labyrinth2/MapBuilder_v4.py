@@ -134,6 +134,9 @@ class Interface(tk.Frame) :
 
         self.ctrls_4label = "Controls are :\n{}".format("\n".join(["{} : {}".format(a, b) for a, b in self.ctrls.items()]))
 
+        self.label_var = tk.StringVar()
+        self.label_var.set((self.coords-8)//16)
+
 
 
 
@@ -198,6 +201,9 @@ class Interface(tk.Frame) :
         self.butlvlquit = tk.Button(self.toplvl, text="Quit", command=self.quit)
         self.butlvlquit.grid(row=0, column=1)
 
+        self.labellvl_2 = tk.Label(self.toplvl, textvariable=self.label_var)
+        self.labellvl_2.grid(row=1, column=1)
+
 
     def _move_cursor(self, way) :
 
@@ -208,6 +214,7 @@ class Interface(tk.Frame) :
             self.coords[ele] = 8
 
         self.canvas.coords(self.curseur, *tuple(self.coords))
+        self.label_var.set((self.coords-8)//16)
 
 
     def delete(self) :
@@ -219,7 +226,7 @@ class Interface(tk.Frame) :
 
         if a != "car" and b == "imgs" :
             self.todel.add(coords)
-            logger.info("Invisble delete until next Escape.")
+            logger.info("Invisble delete until next Return.")
 
 
     def refresh_bg(self) :
