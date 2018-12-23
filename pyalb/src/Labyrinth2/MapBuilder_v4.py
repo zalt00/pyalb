@@ -13,8 +13,12 @@ import os
 
 
 
-CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
+
+
+
+CWD = r'C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2'
 os.chdir(CWD)
+
 
 
 
@@ -45,7 +49,7 @@ if SHAPES_TAB[0] % 16 != 0 or SHAPES_TAB[1] % 16 != 0 or SHAPES_TAB[2] != 3 :
     
     SHAPES_TAB = a, b, c
 
-    logger.warning('Constant SHAPES_TAB is invalid, his value is replaced by "{}".'.format(SHAPES_TAB))
+    logger.warning('SHAPES_TAB\'s value is invalid, his value is replaced by "{}".'.format(SHAPES_TAB))
 
 
 
@@ -57,23 +61,22 @@ class Interface(tk.Frame) :
         
         tk.Frame.__init__(self, root, **kwargs)
 
-        with open("control_mapbuilder.json", "r", encoding="utf8") as data :
-            self.ctrls = jsload(data)
+        self.define_controls()
 
 
         self.car = dict() # permet de conserver les caractères après déassignement de toutes les clefs du self.imgs
         self.tab = np.zeros(shapes_tab, dtype=np.uint8) # tab pour tableau
 
-        file_name = askopenfilename(master=self, title="Ouvrir une carte où appuyez sur Annuler", filetypes=[('txt files','.txt'),('all files','.*')])
+        self.file_name = askopenfilename(master=self, title="Ouvrir une carte où appuyez sur Annuler", filetypes=[('txt files','.txt'),('all files','.*')])
 
         root.attributes('-fullscreen', True)
 
         try:
-            with open(file_name, "r", encoding="utf8") as fch :
+            with open(self.file_name, "r", encoding="utf8") as fch :
                 width, height, lt = create_bg(fch, "Images/bg_mpbuilder.png")
 
         except FileNotFoundError:
-            logger.info("File {} not found".format(file_name))
+            logger.info("File {} not found".format(self.file_name))
 
 
         else:
@@ -107,7 +110,7 @@ class Interface(tk.Frame) :
         self.canvas.bind("<KeyPress>", self.keypress)
         self.coords = np.array([8, 8], dtype=np.int)
 
-        self._bg = tk.PhotoImage(file="Images/bg_mpbuilder.png").zoom(2)
+        self._bg = tk.PhotoImage(file="Images/bg_mpbuilder.png")
         self.canvas.create_image(0, 0, anchor="nw", image=self._bg, tags="img_bg")
 
         self.canvas.pack(expand=True, side="left", fill="both")
@@ -124,18 +127,45 @@ class Interface(tk.Frame) :
             
             self.imgs_paths[ele.app] = ele
 
-        
+        self.info_var = tk.StringVar()
+        self.info_var.set("Hello")
+
+
+        self.info_coords = self.canvas.create_text(root.winfo_screenwidth()-28, root.winfo_screenheight()-48, text="x=0\ny=0", font=('Helvetica', -20, 'bold'))
+
 
         self.todel = set() # set permettant de savoir quelles portions de la grande matrice supprimer après un escape
         # (les "delete" sur une carte composée d'un seule image grace à escape ne vont d'apparence 
-        # rien faire jusqu'au prochain escape)
+        # rien faire jusqu'au prochain return)
 
-        self.black = np.zeros((8,8, 3), dtype=np.uint8)
+        self.black = np.zeros((16, 16, 3), dtype=np.uint8)
 
-        self.ctrls_4label = "Controls are :\n{}".format("\n".join(["{} : {}".format(a, b) for a, b in self.ctrls.items()]))
 
-        self.label_var = tk.StringVar()
-        self.label_var.set((self.coords-8)//16)
+
+        self.menubar = tk.Menu(self)
+
+        self.menu1 = tk.Menu(self.menubar, tearoff=0)
+        self.menu1.add_command(label="Save", command=self.save)
+        self.menu1.add_command(label="Save as", command=self.save_as)
+        self.menu1.add_separator()
+        self.menu1.add_command(label="Close", command=self.quit)
+        self.menubar.add_cascade(label="File", menu=self.menu1)
+
+        self.menu2 = tk.Menu(self.menubar, tearoff=0)
+        self.menu2.add_command(label="Open controls", command=lambda : os.system("open_controls.bat"))
+        self.menu2.add_command(label="Refresh controls", command=self.define_controls)
+        self.menubar.add_cascade(label="Controls", menu=self.menu2)
+
+        root.configure(menu=self.menubar)
+
+
+
+    def define_controls(self) :
+        "Parses controls_mapbuilder.json and puts it into self.ctrls dictionnary "
+        with open("controls_mapbuilder.json", "r", encoding="utf8") as data :
+            self.ctrls = jsload(data)
+
+
 
 
 
@@ -155,7 +185,7 @@ class Interface(tk.Frame) :
                 img_tab = self.imgs_paths[key_ch].code
 
                 self.imgs[coords] = {
-                    "image" : tk.PhotoImage(file=srch[0]).zoom(2), 
+                    "image" : tk.PhotoImage(file=srch[0]), 
                     "key" : key_ch,
                     "tab" : img_tab
                 }
@@ -176,7 +206,6 @@ class Interface(tk.Frame) :
                 pass
             
             option = {
-                "Escape" : self.toplevel_aff,
                 "Up" : lambda : self._move_cursor([0, -16]),
                 "Down" : lambda : self._move_cursor([0, 16]),
                 "Left" : lambda : self._move_cursor([-16, 0]),
@@ -188,23 +217,6 @@ class Interface(tk.Frame) :
             option.get(touche, todo_else)()
 
 
-    def toplevel_aff(self) :
-
-        self.toplvl = tk.Toplevel(self)
-
-        self.butlvl = tk.Button(self.toplvl, text="Save as", command=self.tostr)
-        self.butlvl.grid(column=0, row=0)
-        
-        self.labellvl = tk.Label(self.toplvl, text=self.ctrls_4label)
-        self.labellvl.grid(row=1, column=0)
-
-        self.butlvlquit = tk.Button(self.toplvl, text="Quit", command=self.quit)
-        self.butlvlquit.grid(row=0, column=1)
-
-        self.labellvl_2 = tk.Label(self.toplvl, textvariable=self.label_var)
-        self.labellvl_2.grid(row=1, column=1)
-
-
     def _move_cursor(self, way) :
 
         self.coords += np.array(way)
@@ -214,47 +226,49 @@ class Interface(tk.Frame) :
             self.coords[ele] = 8
 
         self.canvas.coords(self.curseur, *tuple(self.coords))
-        self.label_var.set((self.coords-8)//16)
+
+        self.canvas.itemconfigure(self.info_coords, text="x={}\ny={}".format(*(self.coords-8)//16))
 
 
     def delete(self) :
 
         coords = tuple(self.coords)
         
-        a = self.car.pop(coords, "car")
-        b = self.imgs.pop(coords, "imgs")
+        self.car.pop(coords, "car")
+        self.imgs.pop(coords, "imgs")
 
-        if a != "car" and b == "imgs" :
-            self.todel.add(coords)
-            logger.info("Invisble delete until next Return.")
+        
+        self.todel.add(coords)
+        logger.info("Invisble delete until next Return.")
 
 
     def refresh_bg(self) :
 
         for coords in self.imgs.keys() :
             
-            x = coords[0]//2-4
-            y = coords[1]//2-4
+            x = coords[0]-8
+            y = coords[1]-8
             try :
-                self.tab[y:y+8, x:x+8, :3] = self.imgs[coords]["tab"]
+                self.tab[y:y+16, x:x+16, :3] = self.imgs[coords]["tab"]
             except ValueError as e:
                 logger.error("Given coords are out of bounds.")
                 raise e
 
         for coordsb in self.todel :
 
-            x = coordsb[0]//2-4
-            y = coordsb[1]//2-4
-            self.tab[y:y+8, x:x+8, :3] = self.black
+            x = coordsb[0]-8
+            y = coordsb[1]-8
+            self.tab[y:y+16, x:x+16, :3] = self.black
 
         save_img(self.tab, "Images/bg_mpbuilder.png")
-        self._bg = tk.PhotoImage(file="Images/bg_mpbuilder.png").zoom(2)
+        self._bg = tk.PhotoImage(file="Images/bg_mpbuilder.png")
         self.canvas.itemconfigure("img_bg", image=self._bg)
 
         self.imgs.clear()
 
 
-    def tostr(self) :
+
+    def _tostr(self) :
 
         x, y = max(self.car.keys())
         xb, yb = (x-8)//16+1, (y-8)//16+1
@@ -267,14 +281,34 @@ class Interface(tk.Frame) :
             keyc = keyb[1], keyb[0]
             tab[keyc] = letter
         
+
         tab_str = "\n".join(["".join(a) for a in tab.tolist()]) + "\n"
 
-        file_name = asksaveasfilename(title="Sauvegarder sous :", filetypes=[('txt files','.txt'),('all files','.*')])
+        return tab_str
+        
 
-        with open(file_name, "w", encoding="utf8") as map_file :
-            map_file.write(tab_str)
+    def save(self) :
 
-        self.toplvl.destroy()
+        if self.file_name == "" :
+            self.save_as()
+
+        else :
+            to_write = self._tostr()
+
+            with open(self.file_name, "w", encoding="utf8") as map_file :
+                map_file.write(to_write)
+
+
+
+
+    def save_as(self) :
+
+        self.file_name = asksaveasfilename(title="Sauvegarder sous :", filetypes=[('txt files','.txt'),('all files','.*')])
+
+        to_write = self._tostr()
+
+        with open(self.file_name, "w", encoding="utf8") as map_file :
+            map_file.write(to_write)
         
 
 
@@ -288,4 +322,4 @@ root.mainloop()
 
 
 for temp in temps :
-    os.remove(temp)
+    os.remove(temp)  

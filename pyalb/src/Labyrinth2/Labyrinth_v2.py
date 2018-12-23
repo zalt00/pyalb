@@ -131,8 +131,6 @@ class InGameInterface(tk.Frame) :
         self.fenetre = tk.Frame(self, borderwidth=0, background="#bbb")
         self.fenetre.pack(expand=True, fill="both")
 
-        self.ZOOM = 2
-
         self.play_canvas = tk.Canvas(self.fenetre, height=self["height"], background="#bbb", highlightthickness=0)
         
         self.coords = [0, 0]
@@ -154,6 +152,15 @@ class InGameInterface(tk.Frame) :
 
         self.true = {"ontouch": lambda *a : True}
 
+        self.animations = dict()
+        for animations in glob("Images\\Animations\\*\\*a.png") :
+
+            a = animations.split("\\")
+            if not a[2] in self.animations :
+                self.animations[a[2]] = list()
+
+            self.animations[a[2]].append(tk.PhotoImage(file=animations))
+
 
 
     def play(self) :
@@ -173,11 +180,11 @@ class InGameInterface(tk.Frame) :
         global create_bg
         width_tab, height_tab, self.list_globale = create_bg(carte, "Images/bg.png", temps)
 
-        self.pos_bgrl[0] = width_tab*self.ZOOM//2
-        self.pos_bgrl[1] = height_tab*self.ZOOM//2
+        self.pos_bgrl[0] = width_tab//2
+        self.pos_bgrl[1] = height_tab//2
 
 
-        self.bg_img = tk.PhotoImage(file="Images/bg.png").zoom(self.ZOOM, self.ZOOM)
+        self.bg_img = tk.PhotoImage(file="Images/bg.png")
         self.bg = self.play_canvas.create_image(self.pos_bgrl[0], self.pos_bgrl[1], image=self.bg_img)
 
 
@@ -205,8 +212,8 @@ class InGameInterface(tk.Frame) :
                 entity = self.entities[entity_type][entity_name]
 
                 x, y = entity["coords"]
-                entity["img_on"] = tk.PhotoImage(file=entity["app_on"]).zoom(self.ZOOM) # apparence quand desactive
-                entity["img_off"] = tk.PhotoImage(file=entity["app_off"]).zoom(self.ZOOM) # apparence quand active
+                entity["img_on"] = tk.PhotoImage(file=entity["app_on"]) # apparence quand desactive
+                entity["img_off"] = tk.PhotoImage(file=entity["app_off"]) # apparence quand active
                 entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_off"])
                 entity["type"] = entity_type
                 entity["onimg_coords"] =  [self.psimg(x), self.psimg(y)]
@@ -220,7 +227,7 @@ class InGameInterface(tk.Frame) :
             
 
 
-        self.pers_img = tk.PhotoImage(file="Images/pers.png").zoom(self.ZOOM, self.ZOOM)
+        self.pers_img = tk.PhotoImage(file="Images/pers.png")
         self.pers = self.play_canvas.create_image(self.coords[0], self.coords[1], image=self.pers_img)
 
 
@@ -229,9 +236,20 @@ class InGameInterface(tk.Frame) :
     def _change_img(self, entity) :
         
         if entity["activated"] :
-            self.play_canvas.itemconfigure(entity["obj"], image=entity["img_on"])
+            
+            if entity["on_animation"] :
+                self.after(8, self.play_animation, entity["on_animation"], entity, entity["img_on"])
+            else :
+                self.play_canvas.itemconfigure(entity["obj"], image=entity["img_on"])
+
+
         else :
-            self.play_canvas.itemconfigure(entity["obj"], image=entity["img_off"])
+
+            if entity["off_animation"] :
+                self.after(8, self.play_animation, entity["off_animation"], entity, entity["img_off"])
+            else :
+                self.play_canvas.itemconfigure(entity["obj"], image=entity["img_off"])
+
 
 
     def _case_door(self, coords, *a) :
@@ -245,19 +263,20 @@ class InGameInterface(tk.Frame) :
 
 
 
-
-
-
     def _but_activate(self, entity) :
 
         a = entity["args"].split("/")
 
         target = self.entities[a[0]][a[1]]
 
-        target["activated"] = 1
-        entity["activated"] = 1
-        target.get("change_state", lambda *a : None)(target)
-        entity.get("change_state", lambda *a : None)(entity)
+        if not target["activated"] :
+            target["activated"] = 1
+            target.get("change_state", lambda *a : None)(target)
+
+        if not entity["activated"] :
+            entity["activated"] = 1
+            entity.get("change_state", lambda *a : None)(entity)
+        
 
         return True
 
@@ -277,13 +296,37 @@ class InGameInterface(tk.Frame) :
         return True
 
 
-    # def _door_isactivate(self, entity) :
 
-    #     return entity["activated"]
+    def play_animation(self, animation_args, entity, last_img=None, animation_lt=None, i=0) :
+        
+        animation_name = animation_args[0]
+        speed = animation_args[1]
+
+
+        if i == 0 :
+            animation_lt = self.animations[animation_name]
+            try :
+                if animation_args[2] != "reverse" :
+                    raise IndexError
+            except IndexError :
+                animation_lt = self.animations[animation_name]
+            else :
+                animation_lt = self.animations[animation_name][::-1]
+
+
+        if i == len(self.animations[animation_name]) :
+            if last_img is not None :
+                self.play_canvas.itemconfigure(entity["obj"], image=last_img)
+        else :
+            self.play_canvas.itemconfigure(entity["obj"], image=animation_lt[i])
+            self.after(speed, self.play_animation, animation_args, entity, last_img, animation_lt, i+1)
+
+
+
 
 
     def psimg (self, pos) :
-        return (4+8*pos)*self.ZOOM
+        return (4+8*pos)*2
 
 
 
@@ -454,7 +497,7 @@ class InGameInterface(tk.Frame) :
     def _todo_after_movepers(self, posorneg, xory) :
         
 
-        self.coords[xory] += posorneg[xory] * 8 * self.ZOOM
+        self.coords[xory] += posorneg[xory] * 16
         self.rlcoords[xory] += posorneg[xory]
 
         if not self.rls["pers"] :
@@ -471,7 +514,7 @@ class InGameInterface(tk.Frame) :
 
         self.play_canvas.coords(self.pers, self.coords[0]+n_2move[0], self.coords[1]+n_2move[1])
 
-        n_2move[xory] += posorneg[xory] * self.ZOOM
+        n_2move[xory] += posorneg[xory] * 2
         nb -= 1
         if nb != 0 :
             self.after(12, self._movepers, n_2move, posorneg, xory, nb)
@@ -500,10 +543,10 @@ class InGameInterface(tk.Frame) :
 
     def _movebg(self, posorneg, xory) :
             
-        self.coords[xory] += posorneg[xory] * self.ZOOM *4
+        self.coords[xory] += posorneg[xory] * 8
         self.play_canvas.coords(self.pers, self.coords[0], self.coords[1])
 
-        self.pos_bgrl[xory] += posorneg[xory] * self.ZOOM *4
+        self.pos_bgrl[xory] += posorneg[xory] * 8
         self.play_canvas.coords(self.bg, self.pos_bgrl[0], self.pos_bgrl[1])
 
         for entity_type, ele in self.entities.items() : # syncro des portes et bouttons
@@ -512,7 +555,7 @@ class InGameInterface(tk.Frame) :
                 
                 entity = self.entities[entity_type][entity_name]
 
-                entity["onimg_coords"][xory] += posorneg[xory] * self.ZOOM *4
+                entity["onimg_coords"][xory] += posorneg[xory] * 8
                 x, y = entity["onimg_coords"]
 
                 self.play_canvas.coords(entity["obj"], x, y)

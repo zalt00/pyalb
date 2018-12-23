@@ -12,8 +12,10 @@
 
                 "activated" : 0,
                 "coords" : [7, 5],
-                "app_on" : "Images/PNGS/_ _nth.png",
-                "app_off" : "Images/PNGS/m━_mur.png"
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 20],
+                "off_animation" : ["Door_h", 20, "reverse"]
 
             }
         },
@@ -22,12 +24,15 @@
 
             "button1" : {
 
-                "activated" : 0,
                 "rule" : "switch",
                 "args" : "door/door1",
+                
+                "activated" : 0,
                 "coords" : [3, 1],
                 "app_on" : "Images/PNGS/_C_nth.png",
-                "app_off" : "Images/PNGS/_D_nth.png"
+                "app_off" : "Images/PNGS/_D_nth.png",
+                "on_animation" : 0,
+                "off_animation" : 0
             }
         }
     }
