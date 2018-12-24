@@ -12,7 +12,7 @@ import logging as lg
 from logging.handlers import RotatingFileHandler
 from json import load as jsload
 from PIL import Image
-
+import tkinter.font as tkFont
 
 
 # CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
@@ -46,7 +46,7 @@ class Root(tk.Tk) :
 
 
         self.in_game = InGameInterface(self)
-        self.main_menu = MainMenuInterface(self)
+        self.main_menu = MainMenuInterface(self, borderwidth=0, highlightthickness=0)
 
         self.com = dict()
 
@@ -71,7 +71,7 @@ class MainMenuInterface(tk.Frame) :
 
         self.root = root
         
-
+        self.root.bind_all("<KeyPress-Escape>", lambda *a : self.quit())
 
         self.menu_map_dis = dict()
 
@@ -81,41 +81,56 @@ class MainMenuInterface(tk.Frame) :
             self.menu_map_dis[b] = a
         
 
-        self.menu_label = tk.Label(self, text="S\u00E9lectionnez une carte parmi celles-ci :")
+        self.canvas = tk.Canvas(self)
+
+        self.img = tk.PhotoImage(file="Images/main_menu_bg_resized.png")
+        self.canvas.create_image(0, 0, image=self.img, anchor="nw")
+
+        self.canvas.pack(fill="both", expand=True)
+
+        self.img_txt = tk.PhotoImage(file="Images/txt_main_menu.png")
+        self.canvas.create_image(
+            root.winfo_screenwidth() // 2,
+            root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
+            image = self.img_txt
+        )
+        
+        self.canvas.bind("<KeyPress>", self.get_map)
+        self.canvas.focus_set()
+
+        # self.menu_label = tk.Label(self, text="S\u00E9lectionnez une carte parmi celles-ci :")
 
 
-        self.menu_button = tk.Button(self, text="Valider", command=self.get_map)
+        # self.menu_button = tk.Button(self, text="Valider", command=self.get_map)
 
 
-        self.menu_liste = tk.Listbox(self, selectmode=tk.SINGLE, height=len(self.menu_map_dis)+1, width=35)
-        i = 1
-        for carte in self.menu_map_dis.keys() :
-            self.menu_liste.insert(i, carte)
-            i += 1
+        # self.menu_liste = tk.Listbox(self, selectmode=tk.SINGLE, height=len(self.menu_map_dis)+1, width=35)
+        # i = 1
+        # for carte in self.menu_map_dis.keys() :
+        #     self.menu_liste.insert(i, carte)
+        #     i += 1
 
-        self.menu_label.pack()
-        self.menu_liste.pack()
-        self.menu_button.pack(side=tk.RIGHT)
-
-
-
-    def get_map (self) :
-
-        if self.menu_liste.curselection() != () :
-
-            a = self.menu_liste.get(self.menu_liste.curselection()[0])
-            json_path = self.menu_map_dis[a]
+        # self.menu_label.pack()
+        # self.menu_liste.pack()
+        # self.menu_button.pack(side=tk.RIGHT)
 
 
-            with open(json_path, "r", encoding="utf8") as data :
-                data_dict = jsload(data) # jsload -> json.load
 
-            self.root.com["data"] = data_dict
-            self.root.change_page("main_menu", "in_game")
+    def get_map (self, evt) :
 
-            logger.info('Game started with the map called "{}".'.format(json_path))
+        a = "bouh"
+        json_path = self.menu_map_dis[a]
 
-            self.root.in_game.play()
+
+        with open(json_path, "r", encoding="utf8") as data :
+            data_dict = jsload(data) # jsload -> json.load
+
+        self.root.com["data"] = data_dict
+        self.root.change_page("main_menu", "in_game")
+
+        logger.info('Game started with the map called "{}".'.format(json_path))
+
+        self.root.in_game.play()
 
 
 
@@ -168,7 +183,6 @@ class InGameInterface(tk.Frame) :
     def play(self) :
 
         
-        self.root.attributes('-fullscreen', True)
 
         carte = self.root.com["data"]["map_path"]
 
@@ -610,8 +624,9 @@ class InGameInterface(tk.Frame) :
 
 root = Root()
 root.title("Labyrinth")
+root.attributes('-fullscreen', True)
 
-root.main_menu.pack()
+root.main_menu.pack(fill="both", expand=True)
 
 
 logger.info("This programme has taken {} to setup.".format(perf_counter()-t1))
