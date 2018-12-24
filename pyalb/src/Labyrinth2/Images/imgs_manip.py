@@ -44,6 +44,8 @@ def PNGS (path) :
 
     return pngs
 
+
+
 def img_load(name) :
     image_tab = mpimg.imread(name)
 
@@ -62,12 +64,15 @@ def save_img (img, name, var=None) :
 
     mpimg.imsave(name, img)
 
-    if var is not None :
+    if var is not None : # ajoute le nom du fichier a l'ensemble des fichiers temporaires
         var.add(name)
 
 
 
 def create_bg(choosen_map, file_name, var=None) :
+
+    r"""file_name
+    nom du fichier temporaire"""
 
     if type(choosen_map) == str :
         with open(choosen_map, "r", encoding="utf8") as fichier:

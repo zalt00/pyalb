@@ -6,7 +6,7 @@ from json import load as jsload
 from glob import glob
 import numpy as np
 from time import perf_counter
-from Images.init_images import LabObj, PNGS, save_img, create_bg, img_load
+from Images.imgs_manip import LabObj, PNGS, save_img, create_bg, img_load
 import logging as lg
 from logging.handlers import RotatingFileHandler
 import os
@@ -16,8 +16,8 @@ import os
 
 
 
-CWD = r'C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2'
-os.chdir(CWD)
+# CWD = r'C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2'
+# os.chdir(CWD)
 
 
 

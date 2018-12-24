@@ -1,6 +1,6 @@
 {
 
-    "map_path" : "Cartes/a.txt",
+    "map_path" : "Cartes/HEY.txt",
 
     "pers_x" : 1,
     "pers_y" : 1,
@@ -24,7 +24,7 @@
 
             "button1" : {
 
-                "rule" : "switch",
+                "mode" : "switch",
                 "args" : "door/door1",
                 
                 "activated" : 0,

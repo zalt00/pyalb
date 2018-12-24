@@ -3,7 +3,7 @@
 ┃ ╹ SLLLLLLLLL ╻ C  SSSS  C   CCCCCCCCCC L C L  ┃
 ┃   LLLLLLLLLL ┃            ╻ C┏━━━━━━┓C        ┃
 ┃ ╻            ┃   CCCCCC   ┃ C┃      ┃C        ┃
-┣━┻━━━━━━━╸    ┃SS C┏━━┓C SS┃ C┃ ┏━━┓ ┃C C L C L┃
+┣━┻━━━━ ╺━╸    ┃SS C┏━━┓C SS┃ C┃ ┏━━┓ ┃C C L C L┃
 ┃S   S         ┃SS C┃DD┃C SS┃ C┃ ┣╸╺┫ ┃C        ┃
 ┃  C  ╻ DCCCCD ┃SS C┃DD┃C SS┃ C┃ ┣╸╺┫ ┃C        ┃
 ┃  S  ┃ C    C ┃SS C┗━━┛C SS┃ C┃ ┗━━┛ ┃C L C L C┃

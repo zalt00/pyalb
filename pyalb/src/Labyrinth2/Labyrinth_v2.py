@@ -5,16 +5,18 @@ t1 = perf_counter()
 
 import numpy as np
 import tkinter as tk
-from Images.init_images import LabObj, PNGS, save_img, create_bg
+from Images.imgs_manip import LabObj, PNGS, save_img, create_bg
 from glob import glob
 import os
 import logging as lg
 from logging.handlers import RotatingFileHandler
 from json import load as jsload
+from PIL import Image
 
 
-CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
-os.chdir(CWD)
+
+# CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
+# os.chdir(CWD)
 
 
 temps = set() # fichiers temporaires
@@ -38,9 +40,9 @@ logger.addHandler(file_handler)
 
 class Root(tk.Tk) :
 
-    def __init__(self) :
+    def __init__(self, *args, **kwarks) :
 
-        super().__init__()
+        super().__init__(*args, **kwarks)
 
 
         self.in_game = InGameInterface(self)
@@ -153,14 +155,14 @@ class InGameInterface(tk.Frame) :
         self.true = {"ontouch": lambda *a : True}
 
         self.animations = dict()
-        for animations in glob("Images\\Animations\\*\\*a.png") :
+        for animations in glob("Images\\Animations\\*\\*a.png") : # chargement des animations
 
             a = animations.split("\\")
             if not a[2] in self.animations :
                 self.animations[a[2]] = list()
 
             self.animations[a[2]].append(tk.PhotoImage(file=animations))
-
+        # self.animations -> nom_de_lanimation : liste des tk.Photoimage de l'animation dans l'ordre
 
 
     def play(self) :
@@ -198,14 +200,14 @@ class InGameInterface(tk.Frame) :
             "button" : self._case_button
         }
 
-        self.but_rules = {
+        self.but_modes = {
 
             "activate" : self._but_activate,
             "switch" : self._but_switch
         }
 
 
-        for entity_type, ele in self.entities.items() :
+        for entity_type, ele in self.entities.items() : # loads entities
 
             for entity_name in ele :
 
@@ -214,7 +216,12 @@ class InGameInterface(tk.Frame) :
                 x, y = entity["coords"]
                 entity["img_on"] = tk.PhotoImage(file=entity["app_on"]) # apparence quand desactive
                 entity["img_off"] = tk.PhotoImage(file=entity["app_off"]) # apparence quand active
-                entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_off"])
+
+                if entity["activated"] :
+                    entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_on"])
+                else :
+                    entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_off"])
+
                 entity["type"] = entity_type
                 entity["onimg_coords"] =  [self.psimg(x), self.psimg(y)]
                 entity["change_state"] = self._change_img
@@ -259,7 +266,7 @@ class InGameInterface(tk.Frame) :
 
     def _case_button(self, coords, entity) :
         
-        self.act[coords] = self.but_rules[entity["rule"]]
+        self.act[coords] = self.but_modes[entity["mode"]]
 
 
 
@@ -479,7 +486,7 @@ class InGameInterface(tk.Frame) :
 
 
     def _mur_keytest(self) : 
-        "Permet d'\u00E9viter de devoir s'arr\u00EAter apres \u00EAtre entr\u00E9 dans un mur."
+        "Permet d'\u00E9viter de devoir s'arr\u00EAter apr\u00E8s rencontre avec un mur."
 
         if self.rls["pers"] :
             self.r["pers"] = True
