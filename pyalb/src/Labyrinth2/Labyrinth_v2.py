@@ -95,7 +95,7 @@ class MainMenuInterface(tk.Frame) :
             image = self.img_txt
         )
         
-        self.canvas.bind("<KeyPress>", self.get_map)
+        self.canvas.bind("<KeyPress>", self.start)
         self.canvas.focus_set()
 
         # self.menu_label = tk.Label(self, text="S\u00E9lectionnez une carte parmi celles-ci :")
@@ -114,12 +114,38 @@ class MainMenuInterface(tk.Frame) :
         # self.menu_liste.pack()
         # self.menu_button.pack(side=tk.RIGHT)
 
+    def start(self, *args) :
+
+        self.img_txt = None
+
+        self.map_choice_frame = tk.Frame(self.canvas)
+
+        self.button_list = list()
+        
+        for i, carte in enumerate(self.menu_map_dis.keys()) :
+
+            self.button_list.append(tk.Button(
+                self.map_choice_frame,
+                text=carte,
+                command=lambda path=carte : self.get_map(path),
+                width=50
+            ))
+
+            self.button_list[i].pack()
 
 
-    def get_map (self, evt) :
 
-        a = "bouh"
-        json_path = self.menu_map_dis[a]
+
+        self.canvas.create_window(
+            root.winfo_screenwidth() // 2,
+            root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
+            window=self.map_choice_frame
+        )
+
+
+    def get_map (self, carte) :
+
+        json_path = self.menu_map_dis[carte]
 
 
         with open(json_path, "r", encoding="utf8") as data :
@@ -205,8 +231,7 @@ class InGameInterface(tk.Frame) :
 
 
         self.entities = self.root.com["data"]["entities"]
-        self.dr = dict() # dictionnaire avec en clefs les coordonnees des entites et en valeur leur ref
-        self.act = dict()
+        self.act = dict() # cf en-dessous de la def de change_state
 
         options = {
 
@@ -217,7 +242,10 @@ class InGameInterface(tk.Frame) :
         self.but_modes = {
 
             "activate" : self._but_activate,
-            "switch" : self._but_switch
+            "switch" : self._but_switch,
+
+            "multiactivate" : self._but_multiactivate,
+            "multiswitch" : self._but_multiswitch
         }
 
 
@@ -238,12 +266,12 @@ class InGameInterface(tk.Frame) :
 
                 entity["type"] = entity_type
                 entity["onimg_coords"] =  [self.psimg(x), self.psimg(y)]
-                entity["change_state"] = self._change_img
+                entity["change_state"] = lambda entity=entity : self._change_img(entity)
+                # change_state correspond a l'action visuelle relative au changement d'etat (animations, etc), 
+                # tandis que self.act donne a partir de coordonnees une action a effectuer lors du contact de l'entity sur le joueur
 
 
                 options[entity_type]((x, y), entity)
-
-                self.dr[x, y] = entity
 
             
 
@@ -273,14 +301,14 @@ class InGameInterface(tk.Frame) :
 
 
 
-    def _case_door(self, coords, *a) :
+    def _case_door(self, coords, entity) :
 
-        self.act[coords] = lambda entity : entity["activated"] # self._door_isactivate
+        self.act[coords] = lambda entity=entity : entity["activated"]
 
 
     def _case_button(self, coords, entity) :
         
-        self.act[coords] = self.but_modes[entity["mode"]]
+        self.act[coords] = lambda entity=entity : self.but_modes[entity["mode"]](entity)
 
 
 
@@ -292,11 +320,11 @@ class InGameInterface(tk.Frame) :
 
         if not target["activated"] :
             target["activated"] = 1
-            target.get("change_state", lambda *a : None)(target)
+            target.get("change_state", lambda *a : None)()
 
         if not entity["activated"] :
             entity["activated"] = 1
-            entity.get("change_state", lambda *a : None)(entity)
+            entity.get("change_state", lambda *a : None)()
         
 
         return True
@@ -310,11 +338,48 @@ class InGameInterface(tk.Frame) :
 
         target["activated"] = not target["activated"]
         entity["activated"] = not entity["activated"]
-        target.get("change_state", lambda *a : None)(target)
-        entity.get("change_state", lambda *a : None)(entity)
+        target.get("change_state", lambda *a : None)()
+        entity.get("change_state", lambda *a : None)()
 
 
         return True
+
+
+    def _but_multiswitch(self, entity) :
+
+        for arg in entity["args"] :
+
+            a = arg.split("/")
+            target = self.entities[a[0]][a[1]]
+
+            target["activated"] = not target["activated"]
+            target.get("change_state", lambda *a : None)()
+
+        entity["activated"] = not entity["activated"]
+        entity.get("change_state", lambda *a : None)()
+
+        return True
+
+
+
+
+    def _but_multiactivate(self, entity) :
+
+        for arg in entity["args"] :
+
+            a = arg.split("/")
+            target = self.entities[a[0]][a[1]]
+
+            if not target["activated"] :
+                target["activated"] = 1
+                target.get("change_state", lambda *a : None)()
+
+        if not entity["activated"] :
+            entity["activated"] = 1
+            entity.get("change_state", lambda *a : None)()
+
+        return True
+
 
 
 
@@ -352,11 +417,11 @@ class InGameInterface(tk.Frame) :
 
 
     def clavier_press (self, event) :
-        touche = event.keysym
-        if touche == "Escape" : self.quit()
+        touche = event.keysym.lower()
+        if touche == "escape" : self.quit()
+        
 
-
-        if touche.lower() in "zqsd" :
+        if touche in "zqsd" :
 
             if self.r["pers"] :
                 self._pers_evt(touche)
@@ -364,7 +429,7 @@ class InGameInterface(tk.Frame) :
                 self.touche_save["pers"] = event
 
 
-        if touche.lower() in "oklm" :
+        if touche in "oklm" :
 
             if self.r["cam"] :
                 self._bg_evt(touche)      
@@ -405,34 +470,28 @@ class InGameInterface(tk.Frame) :
            
             
         if self.touche["pers"] == "z" :
-            entity_nw = self.dr.get(tuple(self.rlcoords+(0, -1)), None)
-            self.move_pers(0, -1, entity_nw)
+            self.move_pers(0, -1)
 
         elif self.touche["pers"] == "s" :
-            entity_nw = self.dr.get(tuple(self.rlcoords+(0, 1)), None)
-            self.move_pers(0, 1, entity_nw)
+            self.move_pers(0, 1)
 
-        elif self.touche["pers"] == "d" :
-            entity_nw = self.dr.get(tuple(self.rlcoords+(1, 0)), None)       
-            self.move_pers(1, 0, entity_nw)
+        elif self.touche["pers"] == "d" :      
+            self.move_pers(1, 0)
                         
-        elif self.touche["pers"] == "q" :
-            entity_nw = self.dr.get(tuple(self.rlcoords+(-1, 0)), None)       
-            self.move_pers(-1, 0, entity_nw)
+        elif self.touche["pers"] == "q" :      
+            self.move_pers(-1, 0)
 
         else :
             self.r["pers"] = True
 
 
-    def entity_test(self, entity, x, y) :
+    def entity_test(self, x, y) :
 
-        if entity is not None :
-            return self.act[(x, y)](entity)
-        else :
-            return True
+        
+        return self.act.get((x, y), lambda : True)()
 
 
-    def move_pers(self, x, y, entity) :
+    def move_pers(self, x, y) :
         
         mur = False
 
@@ -441,7 +500,7 @@ class InGameInterface(tk.Frame) :
         if x > 0 :
             xb, yb = self.rlcoords[0]+1, self.rlcoords[1]
             if self.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(entity, xb, yb)
+                self.entity_test(xb, yb)
             ) :
 
                 n_2move = [2, 0] # x puis y
@@ -452,7 +511,7 @@ class InGameInterface(tk.Frame) :
         elif x < 0 :
             xb, yb = self.rlcoords[0]-1, self.rlcoords[1]
             if self.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(entity, xb, yb)
+                self.entity_test(xb, yb)
             ) :
 
                 n_2move = [-2, 0] # x puis y
@@ -463,7 +522,7 @@ class InGameInterface(tk.Frame) :
         elif y > 0 :
             xb, yb = self.rlcoords[0], self.rlcoords[1]+1
             if self.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(entity, xb, yb)
+                self.entity_test(xb, yb)
             ) :
 
                 n_2move = [0, 2] # x puis y
@@ -474,7 +533,7 @@ class InGameInterface(tk.Frame) :
         elif y < 0 :
             xb, yb = self.rlcoords[0], self.rlcoords[1]-1
             if self.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(entity, xb, yb)
+                self.entity_test(xb, yb)
             ) :
 
                 n_2move = [0, -2] # x puis y
@@ -490,7 +549,7 @@ class InGameInterface(tk.Frame) :
 
         else :
             if not self.rls["pers"] :
-                self.after(50, self._mur_keytest)
+                self.after(128, self._mur_keytest)
             else :
                 self.r["pers"] = True
                 if self.touche_save["pers"] is not None :
@@ -500,7 +559,7 @@ class InGameInterface(tk.Frame) :
 
 
     def _mur_keytest(self) : 
-        "Permet d'\u00E9viter de devoir s'arr\u00EAter apr\u00E8s rencontre avec un mur."
+        "Permet d'\u00E9viter un arr\u00EAt apr\u00E8s rencontre avec un mur."
 
         if self.rls["pers"] :
             self.r["pers"] = True
@@ -509,7 +568,7 @@ class InGameInterface(tk.Frame) :
                     self.clavier_press(self.touche_save["pers"])
 
         else :
-            self.after(50, self._mur_keytest)
+            self.after(128, self._mur_keytest)
         
 
 
@@ -522,8 +581,7 @@ class InGameInterface(tk.Frame) :
         self.rlcoords[xory] += posorneg[xory]
 
         if not self.rls["pers"] :
-            entity_nw = self.dr.get(tuple(self.rlcoords+posorneg))
-            self.after(6, self.move_pers, posorneg[0], posorneg[1], entity_nw)
+            self.after(6, self.move_pers, posorneg[0], posorneg[1])
         else :
             self.r["pers"] = True
             if self.touche_save["pers"] is not None :
@@ -570,7 +628,7 @@ class InGameInterface(tk.Frame) :
         self.pos_bgrl[xory] += posorneg[xory] * 8
         self.play_canvas.coords(self.bg, self.pos_bgrl[0], self.pos_bgrl[1])
 
-        for entity_type, ele in self.entities.items() : # syncro des portes et bouttons
+        for entity_type, ele in self.entities.items() : # syncro des portes et boutons
             
             for entity_name in ele :
                 
@@ -598,14 +656,16 @@ class InGameInterface(tk.Frame) :
 
     def clavier_release(self, event):
         
-        if event.keysym.lower() in "zqsd" :
+        touche = event.keysym.lower()
+
+        if touche in "zqsd" :
             self.rls["pers"] = True
 
             if self.touche_save["pers"] is not None :
                 if event.keysym.lower() == self.touche_save["pers"].keysym.lower() :
                     self.touche_save["pers"] = None
         
-        elif event.keysym.lower() in "olmk" :
+        elif touche in "olmk" :
             self.rls["cam"] = True
 
             if self.touche_save["cam"] is not None :
@@ -616,7 +676,6 @@ class InGameInterface(tk.Frame) :
         
 
 
-        
 
 
 

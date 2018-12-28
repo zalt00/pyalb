@@ -11,7 +11,7 @@
 ┃  S  ┃ C    C ┃            ┃ C┗━━━━━━┛C        ┃
 ┃  C  ┃ DCCCCD ╹ C  SSSS  C ┃ CCCCCCCCCC C L C L┃
 ┃S   S┃             SSSS    ┃                   ┃
-┣━━━━━┛ ╺━━━━━━━━━━━━━━━┳━━━┻━━━━━━━━━━━┓       ┃
+┣━━━━━┛ ╺━━━━━━━━━━━━━━━┳━ ╺┻━━━━━━━━━━━┓       ┃
 ┃                       ┃               ┃L C L C┃
 ┃  L  L  DDD    SS    S ┃ SSS LLLLL SSS ┃       ┃
 ┃             D SS    S ┃ SSS       SSS ╹       ┃

@@ -17,6 +17,16 @@
                 "on_animation" : ["Door_h", 20],
                 "off_animation" : ["Door_h", 20, "reverse"]
 
+            },
+
+            "door2" : {
+
+                "activated" : 1,
+                "coords" : [26, 13],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 20],
+                "off_animation" : ["Door_h", 20, "reverse"]
             }
         },
 
@@ -24,8 +34,8 @@
 
             "button1" : {
 
-                "mode" : "switch",
-                "args" : "door/door1",
+                "mode" : "multiswitch",
+                "args" : ["door/door1", "door/door2"],
                 
                 "activated" : 0,
                 "coords" : [3, 1],
