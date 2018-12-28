@@ -88,16 +88,27 @@ class MainMenuInterface(tk.Frame) :
 
         self.canvas.pack(fill="both", expand=True)
 
-        self.img_txt = tk.PhotoImage(file="Images/txt_main_menu.png")
-        self.canvas.create_image(
-            root.winfo_screenwidth() // 2,
-            root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
-            image = self.img_txt
-        )
+        # self.img_txt = tk.PhotoImage(file="Images/txt_main_menu.png")
+        # self.canvas.create_image(
+        #     root.winfo_screenwidth() // 2,
+        #     root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
+        #     image = self.img_txt
+        # )
         
-        self.canvas.bind("<KeyPress>", self.start)
+        self.img_txt = tk.PhotoImage(file="Images/txt_main_menu.png")
+
+        self.button_start = tk.Button(
+            self.canvas,
+            command=self.start,
+            image=self.img_txt
+        )
         self.canvas.focus_set()
 
+        self.window = self.canvas.create_window(
+            root.winfo_screenwidth() // 2,
+            root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
+            window=self.button_start
+        )
         # self.menu_label = tk.Label(self, text="S\u00E9lectionnez une carte parmi celles-ci :")
 
 
@@ -122,6 +133,7 @@ class MainMenuInterface(tk.Frame) :
 
         self.button_list = list()
         
+
         for i, carte in enumerate(self.menu_map_dis.keys()) :
 
             self.button_list.append(tk.Button(
@@ -136,9 +148,8 @@ class MainMenuInterface(tk.Frame) :
 
 
 
-        self.canvas.create_window(
-            root.winfo_screenwidth() // 2,
-            root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
+        self.canvas.itemconfigure(
+            self.window,
             window=self.map_choice_frame
         )
 
