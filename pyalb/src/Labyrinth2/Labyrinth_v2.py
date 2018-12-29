@@ -94,21 +94,34 @@ class MainMenuInterface(tk.Frame) :
         #     root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
         #     image = self.img_txt
         # )
-        
-        self.img_txt = tk.PhotoImage(file="Images/txt_main_menu.png")
 
-        self.button_start = tk.Button(
-            self.canvas,
-            command=self.start,
-            image=self.img_txt
-        )
-        self.canvas.focus_set()
-
-        self.window = self.canvas.create_window(
-            root.winfo_screenwidth() // 2,
+        self.start_txt = self.canvas.create_text(
+            root.winfo_screenwidth() // 2 + root.winfo_screenheight() // 4,
             root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
-            window=self.button_start
+            text="Start",
+            fill="white",
+            font=["Consolas", -45, "bold"]
         )
+
+        self.canvas.bind("<Button-1>", self.click)
+
+        self.img_but = tk.PhotoImage(file="Images/Buttons/button.png")
+
+        # self.button_start = tk.Button(
+        #     self.canvas,
+        #     command=self.start,
+        #     image=self.img_but,
+        #     relief="flat",
+        #     borderwidth=0,
+        #     background="black"
+        # )
+        # self.canvas.focus_set()
+
+        # self.window = self.canvas.create_window(
+        #     root.winfo_screenwidth() // 2,
+        #     root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
+        #     window=self.button_start
+        # )
         # self.menu_label = tk.Label(self, text="S\u00E9lectionnez une carte parmi celles-ci :")
 
 
@@ -124,6 +137,14 @@ class MainMenuInterface(tk.Frame) :
         # self.menu_label.pack()
         # self.menu_liste.pack()
         # self.menu_button.pack(side=tk.RIGHT)
+
+    def click(self, evt) :
+
+        a = (self.start_txt["width"]-123) < evt.x < (self.start_txt["width"]+123)
+        b = (self.start_txt["height"]-43) < evt.y < (self.start_txt["height"]+43)
+
+
+
 
     def start(self, *args) :
 

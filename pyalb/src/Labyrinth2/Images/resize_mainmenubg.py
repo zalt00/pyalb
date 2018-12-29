@@ -11,9 +11,9 @@ a = 1920 / 1080
 b = width / height
 
 if a != b :
-    if a < b :
+    if a > b :
         width = height * a
-    elif b < a :
+    elif b > a :
         height = width / a
 
 height = ceil(height)
