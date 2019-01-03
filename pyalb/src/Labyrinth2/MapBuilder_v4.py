@@ -131,7 +131,12 @@ class Interface(tk.Frame) :
         self.info_var.set("Hello")
 
 
-        self.info_coords = self.canvas.create_text(root.winfo_screenwidth()-28, root.winfo_screenheight()-48, text="x=0\ny=0", font=('Helvetica', -20, 'bold'))
+        self.info_coords = self.canvas.create_text(
+            root.winfo_screenwidth()-28,
+            root.winfo_screenheight()-48,
+            text="x=0\ny=0",
+            font=('Helvetica', -20, 'bold')
+        )
 
 
         self.todel = set() # set permettant de savoir quelles portions de la grande matrice supprimer après un escape
@@ -198,7 +203,7 @@ class Interface(tk.Frame) :
                 self.canvas.tag_raise(self.curseur)
             
             else :
-                logger.info('Key "{}" is invalid.'.format(touche))
+                logger.debug('Key "{}" is invalid.'.format(touche))
 
         else :
 

@@ -13,6 +13,8 @@ from logging.handlers import RotatingFileHandler
 from json import load as jsload
 from PIL import Image
 import tkinter.font as tkFont
+import dynamic_entity as dyent
+import static_entity as stent
 
 
 # CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
@@ -96,8 +98,8 @@ class MainMenuInterface(tk.Frame) :
         # )
 
         self.start_txt = self.canvas.create_text(
-            root.winfo_screenwidth() // 2 + root.winfo_screenheight() // 4,
-            root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
+            root.winfo_screenwidth() // 8 *7,
+            root.winfo_screenheight() // 7 *5,
             text="Start",
             fill="white",
             font=["Consolas", -45, "bold"]
@@ -140,15 +142,15 @@ class MainMenuInterface(tk.Frame) :
 
     def click(self, evt) :
 
-        a = (self.start_txt["width"]-123) < evt.x < (self.start_txt["width"]+123)
-        b = (self.start_txt["height"]-43) < evt.y < (self.start_txt["height"]+43)
-
-
+        item = self.canvas.find_closest(evt.x, evt.y)
+        
+        if item[0] == self.canvas.find_withtag(self.start_txt)[0] :
+            self.start()
 
 
     def start(self, *args) :
 
-        self.img_txt = None
+        self.canvas.delete(self.start_txt)
 
         self.map_choice_frame = tk.Frame(self.canvas)
 
@@ -169,10 +171,14 @@ class MainMenuInterface(tk.Frame) :
 
 
 
-        self.canvas.itemconfigure(
-            self.window,
+        self.window = self.canvas.create_window(
+            root.winfo_screenwidth() // 2,
+            root.winfo_screenheight() // 4 *3,
             window=self.map_choice_frame
         )
+
+        self.canvas.delete(self.start_txt)
+
 
 
     def get_map (self, carte) :
@@ -208,10 +214,10 @@ class InGameInterface(tk.Frame) :
 
         self.play_canvas = tk.Canvas(self.fenetre, height=self["height"], background="#bbb", highlightthickness=0)
         
-        self.coords = [0, 0]
+        self.coords = np.zeros(2, dtype=np.int)
         self.rlcoords = np.zeros(2, dtype=np.int)
 
-        self.pos_bgrl = [0, 0]
+        self.pos_bgrl = np.zeros(2, dtype=np.int)
 
 
         self.r = {"pers" : True, "cam" : True} # permet d'eviter l'appuyage prolongé de windows sur une touche
@@ -262,50 +268,94 @@ class InGameInterface(tk.Frame) :
         self.bg = self.play_canvas.create_image(self.pos_bgrl[0], self.pos_bgrl[1], image=self.bg_img)
 
 
-        self.entities = self.root.com["data"]["entities"]
-        self.act = dict() # cf en-dessous de la def de change_state
 
-        options = {
+        st = self.root.com["data"]["static_entities"]
+        self.static_entities = dict()
+        self.stentcoords = dict() # <entity coords> : entity
 
-            "door" : self._case_door,
-            "button" : self._case_button
-        }
-
-        self.but_modes = {
-
-            "activate" : self._but_activate,
-            "switch" : self._but_switch,
-
-            "multiactivate" : self._but_multiactivate,
-            "multiswitch" : self._but_multiswitch
-        }
-
-
-        for entity_type, ele in self.entities.items() : # loads entities
+        for entity_type, ele in st.items() :
 
             for entity_name in ele :
+                
+                ent_options = st[entity_type][entity_name]
+                entity = getattr(stent, entity_type)(self, **ent_options)
 
-                entity = self.entities[entity_type][entity_name]
+                self.static_entities[entity_type + "/" + entity_name] = entity
 
-                x, y = entity["coords"]
-                entity["img_on"] = tk.PhotoImage(file=entity["app_on"]) # apparence quand desactive
-                entity["img_off"] = tk.PhotoImage(file=entity["app_off"]) # apparence quand active
-
-                if entity["activated"] :
-                    entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_on"])
-                else :
-                    entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_off"])
-
-                entity["type"] = entity_type
-                entity["onimg_coords"] =  [self.psimg(x), self.psimg(y)]
-                entity["change_state"] = lambda entity=entity : self._change_img(entity)
-                # change_state correspond a l'action visuelle relative au changement d'etat (animations, etc), 
-                # tandis que self.act donne a partir de coordonnees une action a effectuer lors du contact de l'entity sur le joueur
+                self.stentcoords[tuple(ent_options["rlcoords"])] = entity
 
 
-                options[entity_type]((x, y), entity)
 
-            
+        # self.static_entities = self.root.com["data"]["static_entities"]
+        # self.act = dict() # cf en-dessous de la def de change_state
+
+        # options = {
+
+        #     "door" : self._case_door,
+        #     "button" : self._case_button
+        # }
+
+        # self.but_modes = {
+
+        #     "activate" : self._but_activate,
+        #     "switch" : self._but_switch,
+
+        #     "multiactivate" : self._but_multiactivate,
+        #     "multiswitch" : self._but_multiswitch
+        # }
+
+
+        # for entity_type, ele in self.static_entities.items() : # loads static entities
+
+        #     for entity_name in ele :
+
+        #         entity = self.static_entities[entity_type][entity_name]
+
+        #         x, y = entity["coords"]
+        #         entity["img_on"] = tk.PhotoImage(file=entity["app_on"]) # apparence quand desactive
+        #         entity["img_off"] = tk.PhotoImage(file=entity["app_off"]) # apparence quand active
+
+        #         if entity["activated"] :
+        #             entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_on"])
+        #         else :
+        #             entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_off"])
+
+        #         entity["type"] = entity_type
+        #         entity["onimg_coords"] =  [self.psimg(x), self.psimg(y)]
+        #         entity["change_state"] = lambda entity=entity : self._change_img(entity)
+        #         # change_state correspond a l'action visuelle relative au changement d'etat (animations, etc), 
+        #         # tandis que self.act donne a partir de coordonnees une action a effectuer lors du contact de l'entity sur le joueur
+
+
+        #         options[entity_type]((x, y), entity)
+
+        
+
+
+        self.dynamic_entities = dict()
+        self.dyentcoords = dict()
+        dy = self.root.com["data"]["dynamic_entities"] # pour raccourcir
+
+        for entity_type, ele in dy.items() :
+
+            for entity_name in ele :
+                
+                ent_options = dy[entity_type][entity_name]
+                entity = getattr(dyent, entity_type)(self, **ent_options)
+
+
+
+                self.dynamic_entities[entity_type + "/" + entity_name] = entity
+                
+                self.dyentcoords[entity]
+
+
+
+
+
+
+
+
 
 
         self.pers_img = tk.PhotoImage(file="Images/pers.png")
@@ -314,130 +364,130 @@ class InGameInterface(tk.Frame) :
 
 
     
-    def _change_img(self, entity) :
+    # def _change_img(self, entity) :
         
-        if entity["activated"] :
+    #     if entity["activated"] :
             
-            if entity["on_animation"] :
-                self.after(8, self.play_animation, entity["on_animation"], entity, entity["img_on"])
-            else :
-                self.play_canvas.itemconfigure(entity["obj"], image=entity["img_on"])
+    #         if entity["on_animation"] :
+    #             self.after(8, self.play_animation, entity["on_animation"], entity, entity["img_on"])
+    #         else :
+    #             self.play_canvas.itemconfigure(entity["obj"], image=entity["img_on"])
 
 
-        else :
+    #     else :
 
-            if entity["off_animation"] :
-                self.after(8, self.play_animation, entity["off_animation"], entity, entity["img_off"])
-            else :
-                self.play_canvas.itemconfigure(entity["obj"], image=entity["img_off"])
-
-
-
-    def _case_door(self, coords, entity) :
-
-        self.act[coords] = lambda entity=entity : entity["activated"]
+    #         if entity["off_animation"] :
+    #             self.after(8, self.play_animation, entity["off_animation"], entity, entity["img_off"])
+    #         else :
+    #             self.play_canvas.itemconfigure(entity["obj"], image=entity["img_off"])
 
 
-    def _case_button(self, coords, entity) :
+
+    # def _case_door(self, coords, entity) :
+
+    #     self.act[coords] = lambda entity=entity : entity["activated"]
+
+
+    # def _case_button(self, coords, entity) :
         
-        self.act[coords] = lambda entity=entity : self.but_modes[entity["mode"]](entity)
+    #     self.act[coords] = lambda entity=entity : self.but_modes[entity["mode"]](entity)
 
 
 
-    def _but_activate(self, entity) :
+    # def _but_activate(self, entity) :
 
-        a = entity["args"].split("/")
+    #     a = entity["args"].split("/")
 
-        target = self.entities[a[0]][a[1]]
+    #     target = self.static_entities[a[0]][a[1]]
 
-        if not target["activated"] :
-            target["activated"] = 1
-            target.get("change_state", lambda *a : None)()
+    #     if not target["activated"] :
+    #         target["activated"] = 1
+    #         target.get("change_state", lambda *a : None)()
 
-        if not entity["activated"] :
-            entity["activated"] = 1
-            entity.get("change_state", lambda *a : None)()
+    #     if not entity["activated"] :
+    #         entity["activated"] = 1
+    #         entity.get("change_state", lambda *a : None)()
         
 
-        return True
+    #     return True
 
 
-    def _but_switch(self, entity) :
+    # def _but_switch(self, entity) :
 
-        a = entity["args"].split("/")
+    #     a = entity["args"].split("/")
 
-        target = self.entities[a[0]][a[1]]
+    #     target = self.static_entities[a[0]][a[1]]
 
-        target["activated"] = not target["activated"]
-        entity["activated"] = not entity["activated"]
-        target.get("change_state", lambda *a : None)()
-        entity.get("change_state", lambda *a : None)()
-
-
-        return True
+    #     target["activated"] = not target["activated"]
+    #     entity["activated"] = not entity["activated"]
+    #     target.get("change_state", lambda *a : None)()
+    #     entity.get("change_state", lambda *a : None)()
 
 
-    def _but_multiswitch(self, entity) :
-
-        for arg in entity["args"] :
-
-            a = arg.split("/")
-            target = self.entities[a[0]][a[1]]
-
-            target["activated"] = not target["activated"]
-            target.get("change_state", lambda *a : None)()
-
-        entity["activated"] = not entity["activated"]
-        entity.get("change_state", lambda *a : None)()
-
-        return True
+    #     return True
 
 
+    # def _but_multiswitch(self, entity) :
 
+    #     for arg in entity["args"] :
 
-    def _but_multiactivate(self, entity) :
+    #         a = arg.split("/")
+    #         target = self.static_entities[a[0]][a[1]]
 
-        for arg in entity["args"] :
+    #         target["activated"] = not target["activated"]
+    #         target.get("change_state", lambda *a : None)()
 
-            a = arg.split("/")
-            target = self.entities[a[0]][a[1]]
+    #     entity["activated"] = not entity["activated"]
+    #     entity.get("change_state", lambda *a : None)()
 
-            if not target["activated"] :
-                target["activated"] = 1
-                target.get("change_state", lambda *a : None)()
-
-        if not entity["activated"] :
-            entity["activated"] = 1
-            entity.get("change_state", lambda *a : None)()
-
-        return True
+    #     return True
 
 
 
 
-    def play_animation(self, animation_args, entity, last_img=None, animation_lt=None, i=0) :
+    # def _but_multiactivate(self, entity) :
+
+    #     for arg in entity["args"] :
+
+    #         a = arg.split("/")
+    #         target = self.static_entities[a[0]][a[1]]
+
+    #         if not target["activated"] :
+    #             target["activated"] = 1
+    #             target.get("change_state", lambda *a : None)()
+
+    #     if not entity["activated"] :
+    #         entity["activated"] = 1
+    #         entity.get("change_state", lambda *a : None)()
+
+    #     return True
+
+
+
+
+    # def play_animation(self, animation_args, entity, last_img=None, animation_lt=None, i=0) :
         
-        animation_name = animation_args[0]
-        speed = animation_args[1]
+    #     animation_name = animation_args[0]
+    #     speed = animation_args[1]
 
 
-        if i == 0 :
-            animation_lt = self.animations[animation_name]
-            try :
-                if animation_args[2] != "reverse" :
-                    raise IndexError
-            except IndexError :
-                animation_lt = self.animations[animation_name]
-            else :
-                animation_lt = self.animations[animation_name][::-1]
+    #     if i == 0 :
+    #         animation_lt = self.animations[animation_name]
+    #         try :
+    #             if animation_args[2] != "reverse" :
+    #                 raise IndexError
+    #         except IndexError :
+    #             animation_lt = self.animations[animation_name]
+    #         else :
+    #             animation_lt = self.animations[animation_name][::-1]
 
 
-        if i == len(self.animations[animation_name]) :
-            if last_img is not None :
-                self.play_canvas.itemconfigure(entity["obj"], image=last_img)
-        else :
-            self.play_canvas.itemconfigure(entity["obj"], image=animation_lt[i])
-            self.after(speed, self.play_animation, animation_args, entity, last_img, animation_lt, i+1)
+    #     elif i == len(self.animations[animation_name]) :
+    #         if last_img is not None :
+    #             self.play_canvas.itemconfigure(entity["obj"], image=last_img)
+    #     else :
+    #         self.play_canvas.itemconfigure(entity["obj"], image=animation_lt[i])
+    #         self.after(speed, self.play_animation, animation_args, entity, last_img, animation_lt, i+1)
 
 
 
@@ -451,7 +501,7 @@ class InGameInterface(tk.Frame) :
     def clavier_press (self, event) :
         touche = event.keysym.lower()
         if touche == "escape" : self.quit()
-        
+
 
         if touche in "zqsd" :
 
@@ -520,7 +570,10 @@ class InGameInterface(tk.Frame) :
     def entity_test(self, x, y) :
 
         
-        return self.act.get((x, y), lambda : True)()
+        a = self.stentcoords.get((x, y), None)
+        if a is not None :
+            return a.contact()
+        return True
 
 
     def move_pers(self, x, y) :
@@ -640,7 +693,7 @@ class InGameInterface(tk.Frame) :
         
     def move_bg(self, x, y) :
         
-        posorneg = x, y
+        posorneg = np.array((x, y))
         
         if y != 0 :
             xory = 1
@@ -660,18 +713,22 @@ class InGameInterface(tk.Frame) :
         self.pos_bgrl[xory] += posorneg[xory] * 8
         self.play_canvas.coords(self.bg, self.pos_bgrl[0], self.pos_bgrl[1])
 
-        for entity_type, ele in self.entities.items() : # syncro des portes et boutons
+        for element in self.static_entities.values(), self.dynamic_entities.values() : # syncro des entites statiques
             
-            for entity_name in ele :
-                
-                entity = self.entities[entity_type][entity_name]
+            for entity in element :
 
-                entity["onimg_coords"][xory] += posorneg[xory] * 8
-                x, y = entity["onimg_coords"]
 
-                self.play_canvas.coords(entity["obj"], x, y)
+                entity.coords += posorneg * 8
+                x, y = entity.coords
+
+                self.play_canvas.coords(entity.item, x, y)
 
         
+
+
+
+        
+
 
         if not self.rls["cam"] :
             self.after(16, self._movebg, posorneg, xory)
