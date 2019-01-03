@@ -217,7 +217,7 @@ class InGameInterface(tk.Frame) :
         self.coords = np.zeros(2, dtype=np.int)
         self.rlcoords = np.zeros(2, dtype=np.int)
 
-        self.pos_bgrl = np.zeros(2, dtype=np.int)
+        self.pos_bg = np.zeros(2, dtype=np.int)
 
 
         self.r = {"pers" : True, "cam" : True} # permet d'eviter l'appuyage prolongé de windows sur une touche
@@ -243,6 +243,16 @@ class InGameInterface(tk.Frame) :
             self.animations[a[2]].append(tk.PhotoImage(file=animations))
         # self.animations -> nom_de_lanimation : liste des tk.Photoimage de l'animation dans l'ordre
 
+        self.screen = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+
+        self.test_persorcam_move = { # permet de tester si une coordonnee dans une certaine direction depasse le tier de l'ecran
+            (0, -1) : lambda new_coords: new_coords[1] > self.screen[1] // 3,
+            (0, 1) : lambda new_coords: new_coords[1] < self.screen[1] * 2 // 3,
+            (1, 0) : lambda new_coords: new_coords[0] < self.screen[0] * 2 // 3,
+            (-1, 0) : lambda new_coords: new_coords[0] > self.screen[0] // 3
+        }
+
+
 
     def play(self) :
 
@@ -260,12 +270,12 @@ class InGameInterface(tk.Frame) :
         global create_bg
         width_tab, height_tab, self.list_globale = create_bg(carte, "Images/bg.png", temps)
 
-        self.pos_bgrl[0] = width_tab//2
-        self.pos_bgrl[1] = height_tab//2
+        self.pos_bg[0] = width_tab//2
+        self.pos_bg[1] = height_tab//2
 
 
         self.bg_img = tk.PhotoImage(file="Images/bg.png")
-        self.bg = self.play_canvas.create_image(self.pos_bgrl[0], self.pos_bgrl[1], image=self.bg_img)
+        self.bg = self.play_canvas.create_image(self.pos_bg[0], self.pos_bg[1], image=self.bg_img)
 
 
 
@@ -286,48 +296,6 @@ class InGameInterface(tk.Frame) :
 
 
 
-        # self.static_entities = self.root.com["data"]["static_entities"]
-        # self.act = dict() # cf en-dessous de la def de change_state
-
-        # options = {
-
-        #     "door" : self._case_door,
-        #     "button" : self._case_button
-        # }
-
-        # self.but_modes = {
-
-        #     "activate" : self._but_activate,
-        #     "switch" : self._but_switch,
-
-        #     "multiactivate" : self._but_multiactivate,
-        #     "multiswitch" : self._but_multiswitch
-        # }
-
-
-        # for entity_type, ele in self.static_entities.items() : # loads static entities
-
-        #     for entity_name in ele :
-
-        #         entity = self.static_entities[entity_type][entity_name]
-
-        #         x, y = entity["coords"]
-        #         entity["img_on"] = tk.PhotoImage(file=entity["app_on"]) # apparence quand desactive
-        #         entity["img_off"] = tk.PhotoImage(file=entity["app_off"]) # apparence quand active
-
-        #         if entity["activated"] :
-        #             entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_on"])
-        #         else :
-        #             entity["obj"] = self.play_canvas.create_image(self.psimg(x), self.psimg(y), image=entity["img_off"])
-
-        #         entity["type"] = entity_type
-        #         entity["onimg_coords"] =  [self.psimg(x), self.psimg(y)]
-        #         entity["change_state"] = lambda entity=entity : self._change_img(entity)
-        #         # change_state correspond a l'action visuelle relative au changement d'etat (animations, etc), 
-        #         # tandis que self.act donne a partir de coordonnees une action a effectuer lors du contact de l'entity sur le joueur
-
-
-        #         options[entity_type]((x, y), entity)
 
         
 
@@ -347,7 +315,7 @@ class InGameInterface(tk.Frame) :
 
                 self.dynamic_entities[entity_type + "/" + entity_name] = entity
                 
-                self.dyentcoords[entity]
+                self.dyentcoords[tuple(ent_options["rlcoords"])] = entity
 
 
 
@@ -361,133 +329,6 @@ class InGameInterface(tk.Frame) :
         self.pers_img = tk.PhotoImage(file="Images/pers.png")
         self.pers = self.play_canvas.create_image(self.coords[0], self.coords[1], image=self.pers_img)
 
-
-
-    
-    # def _change_img(self, entity) :
-        
-    #     if entity["activated"] :
-            
-    #         if entity["on_animation"] :
-    #             self.after(8, self.play_animation, entity["on_animation"], entity, entity["img_on"])
-    #         else :
-    #             self.play_canvas.itemconfigure(entity["obj"], image=entity["img_on"])
-
-
-    #     else :
-
-    #         if entity["off_animation"] :
-    #             self.after(8, self.play_animation, entity["off_animation"], entity, entity["img_off"])
-    #         else :
-    #             self.play_canvas.itemconfigure(entity["obj"], image=entity["img_off"])
-
-
-
-    # def _case_door(self, coords, entity) :
-
-    #     self.act[coords] = lambda entity=entity : entity["activated"]
-
-
-    # def _case_button(self, coords, entity) :
-        
-    #     self.act[coords] = lambda entity=entity : self.but_modes[entity["mode"]](entity)
-
-
-
-    # def _but_activate(self, entity) :
-
-    #     a = entity["args"].split("/")
-
-    #     target = self.static_entities[a[0]][a[1]]
-
-    #     if not target["activated"] :
-    #         target["activated"] = 1
-    #         target.get("change_state", lambda *a : None)()
-
-    #     if not entity["activated"] :
-    #         entity["activated"] = 1
-    #         entity.get("change_state", lambda *a : None)()
-        
-
-    #     return True
-
-
-    # def _but_switch(self, entity) :
-
-    #     a = entity["args"].split("/")
-
-    #     target = self.static_entities[a[0]][a[1]]
-
-    #     target["activated"] = not target["activated"]
-    #     entity["activated"] = not entity["activated"]
-    #     target.get("change_state", lambda *a : None)()
-    #     entity.get("change_state", lambda *a : None)()
-
-
-    #     return True
-
-
-    # def _but_multiswitch(self, entity) :
-
-    #     for arg in entity["args"] :
-
-    #         a = arg.split("/")
-    #         target = self.static_entities[a[0]][a[1]]
-
-    #         target["activated"] = not target["activated"]
-    #         target.get("change_state", lambda *a : None)()
-
-    #     entity["activated"] = not entity["activated"]
-    #     entity.get("change_state", lambda *a : None)()
-
-    #     return True
-
-
-
-
-    # def _but_multiactivate(self, entity) :
-
-    #     for arg in entity["args"] :
-
-    #         a = arg.split("/")
-    #         target = self.static_entities[a[0]][a[1]]
-
-    #         if not target["activated"] :
-    #             target["activated"] = 1
-    #             target.get("change_state", lambda *a : None)()
-
-    #     if not entity["activated"] :
-    #         entity["activated"] = 1
-    #         entity.get("change_state", lambda *a : None)()
-
-    #     return True
-
-
-
-
-    # def play_animation(self, animation_args, entity, last_img=None, animation_lt=None, i=0) :
-        
-    #     animation_name = animation_args[0]
-    #     speed = animation_args[1]
-
-
-    #     if i == 0 :
-    #         animation_lt = self.animations[animation_name]
-    #         try :
-    #             if animation_args[2] != "reverse" :
-    #                 raise IndexError
-    #         except IndexError :
-    #             animation_lt = self.animations[animation_name]
-    #         else :
-    #             animation_lt = self.animations[animation_name][::-1]
-
-
-    #     elif i == len(self.animations[animation_name]) :
-    #         if last_img is not None :
-    #             self.play_canvas.itemconfigure(entity["obj"], image=last_img)
-    #     else :
-    #         self.play_canvas.itemconfigure(entity["obj"], image=animation_lt[i])
-    #         self.after(speed, self.play_animation, animation_args, entity, last_img, animation_lt, i+1)
 
 
 
@@ -552,16 +393,28 @@ class InGameInterface(tk.Frame) :
            
             
         if self.touche["pers"] == "z" :
-            self.move_pers(0, -1)
+            new_rlcoords = self.rlcoords + (0, -1)
+            new_coords = self.coords + (0, -16)
+            ispers = new_coords[1] > self.screen[1] // 3
+            self.move_pers(0, -1, new_rlcoords, new_coords, ispers)
 
         elif self.touche["pers"] == "s" :
-            self.move_pers(0, 1)
+            new_rlcoords = self.rlcoords + (0, 1)
+            new_coords = self.coords + (0, 16)
+            ispers = new_coords[1] < self.screen[1] * 2 // 3
+            self.move_pers(0, 1, new_rlcoords, new_coords, ispers)
 
-        elif self.touche["pers"] == "d" :      
-            self.move_pers(1, 0)
+        elif self.touche["pers"] == "d" :
+            new_rlcoords = self.rlcoords + (1, 0)
+            new_coords = self.coords + (16, 0)
+            ispers = new_coords[0] < self.screen[0] * 2 // 3
+            self.move_pers(1, 0, new_rlcoords, new_coords, ispers)
                         
-        elif self.touche["pers"] == "q" :      
-            self.move_pers(-1, 0)
+        elif self.touche["pers"] == "q" :
+            new_rlcoords = self.rlcoords + (-1, 0)
+            new_coords = self.coords + (-16, 0)
+            ispers = new_coords[0] > self.screen[0] // 3
+            self.move_pers(-1, 0, new_rlcoords, new_coords, ispers)
 
         else :
             self.r["pers"] = True
@@ -576,61 +429,43 @@ class InGameInterface(tk.Frame) :
         return True
 
 
-    def move_pers(self, x, y) :
+    def move_pers(self, x, y, new_rlcoords, new_coords, ispers) :
         
         mur = False
 
-        posorneg = x, y # positive or negative
+        ispers = self.test_persorcam_move[(x, y)](new_coords)
 
-        if x > 0 :
-            xb, yb = self.rlcoords[0]+1, self.rlcoords[1]
-            if self.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(xb, yb)
-            ) :
+        way = np.array((x, y), dtype=np.int)
 
-                n_2move = [2, 0] # x puis y
-                xory = 0 # 0 pour x, 1 pour y
-            else :
-                mur = True
         
-        elif x < 0 :
-            xb, yb = self.rlcoords[0]-1, self.rlcoords[1]
-            if self.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(xb, yb)
-            ) :
+        xb, yb = new_rlcoords
+        if not (self.list_globale[yb][xb].tag != "mur" and 
+            self.entity_test(xb, yb)
+        ) :
 
-                n_2move = [-2, 0] # x puis y
-                xory = 0 # 0 pour x, 1 pour y
-            else :
-                mur = True
+            # n_2move = [2, 0] # x puis y
+            # xory = 0 # 0 pour x, 1 pour y
+            mur = True
+        
 
-        elif y > 0 :
-            xb, yb = self.rlcoords[0], self.rlcoords[1]+1
-            if self.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(xb, yb)
-            ) :
+        
 
-                n_2move = [0, 2] # x puis y
-                xory = 1 # 0 pour x, 1 pour y
-            else :
-                mur = True
 
-        elif y < 0 :
-            xb, yb = self.rlcoords[0], self.rlcoords[1]-1
-            if self.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(xb, yb)
-            ) :
 
-                n_2move = [0, -2] # x puis y
-                xory = 1 # 0 pour x, 1 pour y
-            else :
-                mur = True
+
+
 
 
 
         if not mur :
            
-            self._movepers(n_2move, posorneg, xory, 8)
+
+            n_2move = way*2
+
+            if not ispers :
+                self._movecam(n_2move, way, 8)
+            else :
+                self._movepers(n_2move, way, 8)
 
         else :
             if not self.rls["pers"] :
@@ -659,14 +494,19 @@ class InGameInterface(tk.Frame) :
 
 
     
-    def _todo_after_movepers(self, posorneg, xory) :
+    def _todo_after_moving(self, way, ispers=True) :
         
-
-        self.coords[xory] += posorneg[xory] * 16
-        self.rlcoords[xory] += posorneg[xory]
+        if ispers :
+            self.coords += way * 16
+        else :
+            self.pos_bg -= way * 16
+        self.rlcoords += way
 
         if not self.rls["pers"] :
-            self.after(6, self.move_pers, posorneg[0], posorneg[1])
+            new_rlcoords = self.rlcoords + way
+            new_coords = self.coords + way * 16
+            ispers = self.test_persorcam_move[tuple(way)](new_coords)
+            self.after(6, self.move_pers, *way, new_rlcoords, new_coords, ispers)
         else :
             self.r["pers"] = True
             if self.touche_save["pers"] is not None :
@@ -674,51 +514,57 @@ class InGameInterface(tk.Frame) :
                     self.clavier_press(self.touche_save["pers"])
 
 
-    def _movepers(self, n_2move, posorneg, xory, nb) :
+    def _movepers(self, n_2move, way, nb) :
 
         self.play_canvas.coords(self.pers, self.coords[0]+n_2move[0], self.coords[1]+n_2move[1])
 
-        n_2move[xory] += posorneg[xory] * 2
+        n_2move += way * 2
         nb -= 1
         if nb != 0 :
-            self.after(12, self._movepers, n_2move, posorneg, xory, nb)
+            self.after(12, self._movepers, n_2move, way, nb)
         else :
-            self.after(6, self._todo_after_movepers, posorneg, xory)
+            self.after(6, self._todo_after_moving, way)
 
+    
 
+    def _movecam(self, n_2move, way, nb) :
 
+        self.play_canvas.coords(self.bg, self.pos_bg[0]-n_2move[0], self.pos_bg[1]-n_2move[1])
+
+        n_2move += way * 2
+        nb -= 1
+        if nb != 0 :
+            self.after(12, self._movecam, n_2move, way, nb)
+        else :
+            self.after(6, self._todo_after_moving, way, False)
 
 
 
         
     def move_bg(self, x, y) :
         
-        posorneg = np.array((x, y))
+        way = np.array((x, y))
         
-        if y != 0 :
-            xory = 1
-        elif x != 0 :
-            xory = 0
 
 
 
-        self._movebg(posorneg, xory)
+        self._movebg(way)
 
 
-    def _movebg(self, posorneg, xory) :
+    def _movebg(self, way) :
             
-        self.coords[xory] += posorneg[xory] * 8
+        self.coords += way * 8
         self.play_canvas.coords(self.pers, self.coords[0], self.coords[1])
 
-        self.pos_bgrl[xory] += posorneg[xory] * 8
-        self.play_canvas.coords(self.bg, self.pos_bgrl[0], self.pos_bgrl[1])
+        self.pos_bg += way * 8
+        self.play_canvas.coords(self.bg, self.pos_bg[0], self.pos_bg[1])
 
         for element in self.static_entities.values(), self.dynamic_entities.values() : # syncro des entites statiques
             
             for entity in element :
 
 
-                entity.coords += posorneg * 8
+                entity.coords += way * 8
                 x, y = entity.coords
 
                 self.play_canvas.coords(entity.item, x, y)
@@ -731,7 +577,7 @@ class InGameInterface(tk.Frame) :
 
 
         if not self.rls["cam"] :
-            self.after(16, self._movebg, posorneg, xory)
+            self.after(16, self._movebg, way)
         else :
             self.r["cam"] = True
             if self.touche_save["cam"] is not None :
