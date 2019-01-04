@@ -135,7 +135,7 @@ class Bourpi(DynamicEntity) :
         img_path = "Images/entityImages/Bourpi/default_app.png"
 
         self.img = tk.PhotoImage(file=img_path)
-        self.item = self.canvas.create_image(self.coords[0], self.coords[1], image=self.img)
+        self.item = self.canvas.create_image(self.coords[0], self.coords[1], image=self.img, tag="Entity")
         
         exec("self.comportement = {}(self)".format(options["comportement"]))
 

@@ -20,6 +20,8 @@ import static_entity as stent
 # CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
 # os.chdir(CWD)
 
+NO_COLLISION = True
+
 
 temps = set() # fichiers temporaires
 
@@ -243,15 +245,6 @@ class InGameInterface(tk.Frame) :
             self.animations[a[2]].append(tk.PhotoImage(file=animations))
         # self.animations -> nom_de_lanimation : liste des tk.Photoimage de l'animation dans l'ordre
 
-        self.screen = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
-
-        self.test_persorcam_move = { # permet de tester si une coordonnee dans une certaine direction depasse le tier de l'ecran
-            (0, -1) : lambda new_coords: new_coords[1] > self.screen[1] // 3,
-            (0, 1) : lambda new_coords: new_coords[1] < self.screen[1] * 2 // 3,
-            (1, 0) : lambda new_coords: new_coords[0] < self.screen[0] * 2 // 3,
-            (-1, 0) : lambda new_coords: new_coords[0] > self.screen[0] // 3
-        }
-
 
 
     def play(self) :
@@ -272,14 +265,14 @@ class InGameInterface(tk.Frame) :
 
         self.pos_bg[0] = width_tab//2
         self.pos_bg[1] = height_tab//2
-
+        self.defaultposbg = np.copy(self.pos_bg)
 
         self.bg_img = tk.PhotoImage(file="Images/bg.png")
         self.bg = self.play_canvas.create_image(self.pos_bg[0], self.pos_bg[1], image=self.bg_img)
 
 
 
-        st = self.root.com["data"]["static_entities"]
+        st = self.root.com["data"].get("static_entities", {})
         self.static_entities = dict()
         self.stentcoords = dict() # <entity coords> : entity
 
@@ -302,7 +295,7 @@ class InGameInterface(tk.Frame) :
 
         self.dynamic_entities = dict()
         self.dyentcoords = dict()
-        dy = self.root.com["data"]["dynamic_entities"] # pour raccourcir
+        dy = self.root.com["data"].get("dynamic_entities", {}) # pour raccourcir
 
         for entity_type, ele in dy.items() :
 
@@ -330,6 +323,20 @@ class InGameInterface(tk.Frame) :
         self.pers = self.play_canvas.create_image(self.coords[0], self.coords[1], image=self.pers_img)
 
 
+
+        self.screen = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        oos = np.array((width_tab, height_tab)) - np.array(self.screen) # oos = out of screen
+        self.maxposbg = self.defaultposbg - oos
+
+        self.test_persorcam_move = { # permet de tester si une coordonnee dans une certaine direction depasse le tier de l'ecran
+            (0, -1) : lambda new_coords: (new_coords[1] > self.screen[1] // 3) or self.defaultposbg[1] == self.pos_bg[1],
+            (0, 1) : lambda new_coords: ((new_coords[1] < self.screen[1] * 2 // 3) or
+                self.maxposbg[1] == self.pos_bg[1]),
+
+            (1, 0) : lambda new_coords: ((new_coords[0] < self.screen[0] * 2 // 3) or
+                self.maxposbg[0] == self.pos_bg[0]),
+            (-1, 0) : lambda new_coords: (new_coords[0] > self.screen[0] // 3) or self.defaultposbg[0] == self.pos_bg[0]
+        } # si vrai, le personnage doit se deplacer
 
 
 
@@ -446,15 +453,10 @@ class InGameInterface(tk.Frame) :
             # n_2move = [2, 0] # x puis y
             # xory = 0 # 0 pour x, 1 pour y
             mur = True
-        
-
-        
 
 
-
-
-
-
+        if NO_COLLISION :
+            mur = False
 
 
         if not mur :
@@ -462,7 +464,7 @@ class InGameInterface(tk.Frame) :
 
             n_2move = way*2
 
-            if not ispers :
+            if not ispers:
                 self._movecam(n_2move, way, 8)
             else :
                 self._movepers(n_2move, way, 8)
@@ -516,9 +518,8 @@ class InGameInterface(tk.Frame) :
 
     def _movepers(self, n_2move, way, nb) :
 
-        self.play_canvas.coords(self.pers, self.coords[0]+n_2move[0], self.coords[1]+n_2move[1])
+        self.play_canvas.move(self.pers, n_2move[0], n_2move[1])
 
-        n_2move += way * 2
         nb -= 1
         if nb != 0 :
             self.after(12, self._movepers, n_2move, way, nb)
@@ -529,9 +530,8 @@ class InGameInterface(tk.Frame) :
 
     def _movecam(self, n_2move, way, nb) :
 
-        self.play_canvas.coords(self.bg, self.pos_bg[0]-n_2move[0], self.pos_bg[1]-n_2move[1])
+        self.play_canvas.move(self.bg, -n_2move[0], -n_2move[1])
 
-        n_2move += way * 2
         nb -= 1
         if nb != 0 :
             self.after(12, self._movecam, n_2move, way, nb)

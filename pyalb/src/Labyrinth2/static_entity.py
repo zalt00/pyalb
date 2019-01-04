@@ -24,9 +24,9 @@ class StaticEntity :
 
         x, y = self.coords
         if self.activated :
-            self.item = self.canvas.create_image(x, y, image=self.app_on)
+            self.item = self.canvas.create_image(x, y, image=self.app_on, tag="Entity")
         else :
-            self.item = self.canvas.create_image(x, y, image=self.app_off)
+            self.item = self.canvas.create_image(x, y, image=self.app_off, tag="Entity")
 
 
 
