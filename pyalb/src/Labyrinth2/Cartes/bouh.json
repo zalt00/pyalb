@@ -14,8 +14,8 @@
                 "rlcoords" : [7, 5],
                 "app_on" : "Images/Animations/Door_h/last.png",
                 "app_off" : "Images/PNGS/m╸_mur.png",
-                "on_animation" : ["Door_h", 20],
-                "off_animation" : ["Door_h", 20, "reverse"]
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
 
             },
 
@@ -25,8 +25,8 @@
                 "rlcoords" : [26, 13],
                 "app_on" : "Images/Animations/Door_h/last.png",
                 "app_off" : "Images/PNGS/m╸_mur.png",
-                "on_animation" : ["Door_h", 20],
-                "off_animation" : ["Door_h", 20, "reverse"]
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
             }
         },
 
@@ -53,7 +53,7 @@
 
             "Marcel" : {
                 
-                "rlcoords" : [3, 2],
+                "rlcoords" : [10, 10],
                 "comportement" : "RandomMoving"
 
             }

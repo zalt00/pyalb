@@ -16,6 +16,7 @@ class DynamicEntity :
 
         self.coords = np.array(options.get("coords", self.psimg(self.rlcoords)))
         
+        self.speed = options.get("speed", 16)
 
         self.canvas = interface.play_canvas
         self.inter = interface
@@ -28,24 +29,23 @@ class DynamicEntity :
 
 
 
-    def _todo_after_move(self, posorneg, xory) :
+    def _todo_after_move(self, way) :
         
 
-        self.coords[xory] += posorneg[xory] * 16
-        self.rlcoords[xory] += posorneg[xory]
+        self.coords += way * 16
+        self.rlcoords += way
         self.ismoving = False
 
 
-    def _move(self, n_2move, posorneg, xory, nb) :
+    def _move(self, n_2move, way, nb) :
 
-        self.canvas.coords(self.item, self.coords[0]+n_2move[0], self.coords[1]+n_2move[1])
+        self.canvas.move(self.item, n_2move[0], n_2move[1])
 
-        n_2move[xory] += posorneg[xory] * 2
         nb -= 1
         if nb != 0 :
-            self.canvas.after(12, self._move, n_2move, posorneg, xory, nb)
+            self.canvas.after(self.speed, self._move, n_2move, way, nb)
         else :
-            self.canvas.after(6, self._todo_after_move, posorneg, xory)
+            self.canvas.after(self.speed, self._todo_after_move, way)
 
 
     def entity_test(self, x, y) :
@@ -57,65 +57,33 @@ class DynamicEntity :
         return True
 
 
-    def move_entity(self, x, y) :
+    def move_entity(self, x, y, new_rlcoords) :
         
         self.ismoving = True
         mur = False
 
-        posorneg = x, y # positive or negative
+        way = np.array((x, y), dtype=np.int)
 
-        if x > 0 :
-            xb, yb = self.rlcoords[0]+1, self.rlcoords[1]
-            if self.inter.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(xb, yb)
-            ) :
-
-                n_2move = [2, 0] # x puis y
-                xory = 0 # 0 pour x, 1 pour y
-            else :
-                mur = True
         
-        elif x < 0 :
-            xb, yb = self.rlcoords[0]-1, self.rlcoords[1]
-            if self.inter.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(xb, yb)
-            ) :
+        xb, yb = new_rlcoords
+        if not (self.inter.list_globale[yb][xb].tag != "mur" and 
+            self.entity_test(xb, yb)
+        ) :
 
-                n_2move = [-2, 0] # x puis y
-                xory = 0 # 0 pour x, 1 pour y
-            else :
-                mur = True
-
-        elif y > 0 :
-            xb, yb = self.rlcoords[0], self.rlcoords[1]+1
-            if self.inter.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(xb, yb)
-            ) :
-
-                n_2move = [0, 2] # x puis y
-                xory = 1 # 0 pour x, 1 pour y
-            else :
-                mur = True
-
-        elif y < 0 :
-            xb, yb = self.rlcoords[0], self.rlcoords[1]-1
-            if self.inter.list_globale[yb][xb].tag != "mur" and (
-                self.entity_test(xb, yb)
-            ) :
-
-                n_2move = [0, -2] # x puis y
-                xory = 1 # 0 pour x, 1 pour y
-            else :
-                mur = True
-
+            # n_2move = [2, 0] # x puis y
+            # xory = 0 # 0 pour x, 1 pour y
+            mur = True
 
 
         if not mur :
            
-            self._move(n_2move, posorneg, xory, 8)
 
-        else : 
+            n_2move = way*2
+            self._move(n_2move, way, 8)
+
+        else :
             self.ismoving = False
+
 
 
 
@@ -196,8 +164,9 @@ class RandomMoving(Comportement) :
     def run(self, recall=True) :
 
         if not self.entity.ismoving :
-            a = self.new_way()
-            self.entity.move_entity(*a)
+            way = self.new_way()
+            new_rlcoords = self.entity.rlcoords + way
+            self.entity.move_entity(*way, new_rlcoords)
 
         if recall :
             self.entity.inter.after(24, self.run)

@@ -20,7 +20,7 @@ import static_entity as stent
 # CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
 # os.chdir(CWD)
 
-NO_COLLISION = True
+NO_COLLISION = False
 
 
 temps = set() # fichiers temporaires
@@ -104,43 +104,28 @@ class MainMenuInterface(tk.Frame) :
             root.winfo_screenheight() // 7 *5,
             text="Start",
             fill="white",
-            font=["Consolas", -45, "bold"]
+            activefill="gray",
+            font=["Lucida", 46]
         )
+
+
+        # self.txt_start_inactive = tk.PhotoImage(file="Images/TXT/txt_start.png")
+        # self.txt_start_active = tk.PhotoImage(file="Images/TXT/txt_start2.png")
+
+        # self.start_txt = self.canvas.create_image(
+        #     root.winfo_screenwidth() // 8 *7,
+        #     root.winfo_screenheight() // 7 *5,
+        #     activeimage=self.txt_start_active,
+        #     image=self.txt_start_inactive
+        # )
+
+
 
         self.canvas.bind("<Button-1>", self.click)
 
-        self.img_but = tk.PhotoImage(file="Images/Buttons/button.png")
-
-        # self.button_start = tk.Button(
-        #     self.canvas,
-        #     command=self.start,
-        #     image=self.img_but,
-        #     relief="flat",
-        #     borderwidth=0,
-        #     background="black"
-        # )
-        # self.canvas.focus_set()
-
-        # self.window = self.canvas.create_window(
-        #     root.winfo_screenwidth() // 2,
-        #     root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
-        #     window=self.button_start
-        # )
-        # self.menu_label = tk.Label(self, text="S\u00E9lectionnez une carte parmi celles-ci :")
+        # self.img_but = tk.PhotoImage(file="Images/Buttons/button.png")
 
 
-        # self.menu_button = tk.Button(self, text="Valider", command=self.get_map)
-
-
-        # self.menu_liste = tk.Listbox(self, selectmode=tk.SINGLE, height=len(self.menu_map_dis)+1, width=35)
-        # i = 1
-        # for carte in self.menu_map_dis.keys() :
-        #     self.menu_liste.insert(i, carte)
-        #     i += 1
-
-        # self.menu_label.pack()
-        # self.menu_liste.pack()
-        # self.menu_button.pack(side=tk.RIGHT)
 
     def click(self, evt) :
 
@@ -270,6 +255,7 @@ class InGameInterface(tk.Frame) :
         self.bg_img = tk.PhotoImage(file="Images/bg.png")
         self.bg = self.play_canvas.create_image(self.pos_bg[0], self.pos_bg[1], image=self.bg_img)
 
+        self.entities = list()
 
 
         st = self.root.com["data"].get("static_entities", {})
@@ -284,6 +270,7 @@ class InGameInterface(tk.Frame) :
                 entity = getattr(stent, entity_type)(self, **ent_options)
 
                 self.static_entities[entity_type + "/" + entity_name] = entity
+                self.entities.append(entity)
 
                 self.stentcoords[tuple(ent_options["rlcoords"])] = entity
 
@@ -307,7 +294,8 @@ class InGameInterface(tk.Frame) :
 
 
                 self.dynamic_entities[entity_type + "/" + entity_name] = entity
-                
+                self.entities.append(entity)
+
                 self.dyentcoords[tuple(ent_options["rlcoords"])] = entity
 
 
@@ -329,14 +317,14 @@ class InGameInterface(tk.Frame) :
         self.maxposbg = self.defaultposbg - oos
 
         self.test_persorcam_move = { # permet de tester si une coordonnee dans une certaine direction depasse le tier de l'ecran
-            (0, -1) : lambda new_coords: (new_coords[1] > self.screen[1] // 3) or self.defaultposbg[1] == self.pos_bg[1],
-            (0, 1) : lambda new_coords: ((new_coords[1] < self.screen[1] * 2 // 3) or
+            (0, -1) : lambda new_coords: (new_coords[1] > self.screen[1] * 11 // 30) or self.defaultposbg[1] == self.pos_bg[1],
+            (0, 1) : lambda new_coords: ((new_coords[1] < self.screen[1] * 19 // 30) or
                 self.maxposbg[1] == self.pos_bg[1]),
 
-            (1, 0) : lambda new_coords: ((new_coords[0] < self.screen[0] * 2 // 3) or
+            (1, 0) : lambda new_coords: ((new_coords[0] < self.screen[0] * 19 // 30) or
                 self.maxposbg[0] == self.pos_bg[0]),
-            (-1, 0) : lambda new_coords: (new_coords[0] > self.screen[0] // 3) or self.defaultposbg[0] == self.pos_bg[0]
-        } # si vrai, le personnage doit se deplacer
+            (-1, 0) : lambda new_coords: (new_coords[0] > self.screen[0] * 11 // 30) or self.defaultposbg[0] == self.pos_bg[0]
+        } # si vrai, le personnage doit se deplacer, si faux, la camera doit se deplacer dans l'autre sens
 
 
 
@@ -402,25 +390,25 @@ class InGameInterface(tk.Frame) :
         if self.touche["pers"] == "z" :
             new_rlcoords = self.rlcoords + (0, -1)
             new_coords = self.coords + (0, -16)
-            ispers = new_coords[1] > self.screen[1] // 3
+            ispers = self.test_persorcam_move[(0, -1)](new_coords)
             self.move_pers(0, -1, new_rlcoords, new_coords, ispers)
 
         elif self.touche["pers"] == "s" :
             new_rlcoords = self.rlcoords + (0, 1)
             new_coords = self.coords + (0, 16)
-            ispers = new_coords[1] < self.screen[1] * 2 // 3
+            ispers = self.test_persorcam_move[(0, 1)](new_coords)
             self.move_pers(0, 1, new_rlcoords, new_coords, ispers)
 
         elif self.touche["pers"] == "d" :
             new_rlcoords = self.rlcoords + (1, 0)
             new_coords = self.coords + (16, 0)
-            ispers = new_coords[0] < self.screen[0] * 2 // 3
+            ispers = self.test_persorcam_move[(1, 0)](new_coords)
             self.move_pers(1, 0, new_rlcoords, new_coords, ispers)
                         
         elif self.touche["pers"] == "q" :
             new_rlcoords = self.rlcoords + (-1, 0)
             new_coords = self.coords + (-16, 0)
-            ispers = new_coords[0] > self.screen[0] // 3
+            ispers = self.test_persorcam_move[(-1, 0)](new_coords)
             self.move_pers(-1, 0, new_rlcoords, new_coords, ispers)
 
         else :
@@ -502,7 +490,11 @@ class InGameInterface(tk.Frame) :
             self.coords += way * 16
         else :
             self.pos_bg -= way * 16
+            for entity in self.entities :
+                entity.coords -= way * 16
+
         self.rlcoords += way
+
 
         if not self.rls["pers"] :
             new_rlcoords = self.rlcoords + way
@@ -522,21 +514,22 @@ class InGameInterface(tk.Frame) :
 
         nb -= 1
         if nb != 0 :
-            self.after(12, self._movepers, n_2move, way, nb)
+            self.after(16, self._movepers, n_2move, way, nb)
         else :
-            self.after(6, self._todo_after_moving, way)
+            self.after(10, self._todo_after_moving, way)
 
     
 
     def _movecam(self, n_2move, way, nb) :
 
         self.play_canvas.move(self.bg, -n_2move[0], -n_2move[1])
+        self.play_canvas.move("Entity", -n_2move[0], -n_2move[1])
 
         nb -= 1
         if nb != 0 :
-            self.after(12, self._movecam, n_2move, way, nb)
+            self.after(16, self._movecam, n_2move, way, nb)
         else :
-            self.after(6, self._todo_after_moving, way, False)
+            self.after(10, self._todo_after_moving, way, False)
 
 
 
@@ -554,20 +547,15 @@ class InGameInterface(tk.Frame) :
     def _movebg(self, way) :
             
         self.coords += way * 8
-        self.play_canvas.coords(self.pers, self.coords[0], self.coords[1])
+        self.play_canvas.move(self.pers, *(way*8))
 
         self.pos_bg += way * 8
-        self.play_canvas.coords(self.bg, self.pos_bg[0], self.pos_bg[1])
+        self.play_canvas.move(self.bg, *(way*8))
 
-        for element in self.static_entities.values(), self.dynamic_entities.values() : # syncro des entites statiques
-            
-            for entity in element :
+        self.play_canvas.move("Entity", *(way*8))
 
-
-                entity.coords += way * 8
-                x, y = entity.coords
-
-                self.play_canvas.coords(entity.item, x, y)
+        for entity in self.entities :
+            entity.coords -= way * 16
 
         
 
