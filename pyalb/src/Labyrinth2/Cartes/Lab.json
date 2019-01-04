@@ -1,0 +1,40 @@
+{
+
+    "map_path" : "Cartes/Lab.txt",
+
+    "pers_x" : 3,
+    "pers_y" : 3,
+
+
+    "static_entities" : {
+
+        "Door" : {
+
+            "porte_nw" : {
+
+                "activated" : false,
+                "rlcoords" : [2, 19],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
+            },
+
+            
+            "porte_2" : {
+                
+                "activated" : false,
+                "rlcoords" : [24, 20],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
+            }
+        }
+
+
+
+
+
+    }
+}

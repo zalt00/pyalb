@@ -22,7 +22,7 @@ import os
 
 
 
-SHAPES_TAB = (320, 320, 3) # dimension de la "zone de dessin", les deux premier sont deux multiples de 16, le dernier est 3
+SHAPES_TAB = (896, 1888, 3) # dimension de la "zone de dessin", les deux premier sont deux multiples de 16, le dernier est 3
 
 temps = set() # ensemble des fichiers temporaires
 
@@ -108,6 +108,7 @@ class Interface(tk.Frame) :
 
         self.canvas = tk.Canvas(self)
         self.canvas.bind("<KeyPress>", self.keypress)
+        self.canvas.bind("<Control-KeyPress>", self.lock_key)
         self.coords = np.array([8, 8], dtype=np.int)
 
         self._bg = tk.PhotoImage(file="Images/bg_mpbuilder.png")
@@ -126,9 +127,6 @@ class Interface(tk.Frame) :
         for ele in self.pngs :
             
             self.imgs_paths[ele.app] = ele
-
-        self.info_var = tk.StringVar()
-        self.info_var.set("Hello")
 
 
         self.info_coords = self.canvas.create_text(
@@ -162,6 +160,8 @@ class Interface(tk.Frame) :
         self.menubar.add_cascade(label="Controls", menu=self.menu2)
 
         root.configure(menu=self.menubar)
+        
+        self.keylocked = None
 
 
 
@@ -175,9 +175,10 @@ class Interface(tk.Frame) :
 
 
 
-    def keypress(self, evt):
-        
-        touche = evt.keysym
+    def keypress(self, evt=None, touche=None):
+
+        if touche is None :
+            touche = evt.keysym
         
         if not (touche in ["Up", "Right", "Left", "Down", "Delete", "Shift_L", 'Caps_Lock', 'Escape', "Return"]) :
             
@@ -233,6 +234,10 @@ class Interface(tk.Frame) :
         self.canvas.coords(self.curseur, *tuple(self.coords))
 
         self.canvas.itemconfigure(self.info_coords, text="x={}\ny={}".format(*(self.coords-8)//16))
+        self.canvas.tag_raise(self.info_coords)
+
+        if self.keylocked is not None :
+            self.after(8, self.keypress, None, self.keylocked)
 
 
     def delete(self) :
@@ -315,6 +320,15 @@ class Interface(tk.Frame) :
         with open(self.file_name, "w", encoding="utf8") as map_file :
             map_file.write(to_write)
         
+
+    def lock_key(self, evt) :
+
+        key = evt.keysym
+        
+        if self.keylocked == key :
+            self.keylocked = None
+        else :
+            self.keylocked = key
 
 
 
