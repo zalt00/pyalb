@@ -108,7 +108,7 @@ class Button(StaticEntity) :
         
         self.target = set()
 
-        if type(options["args"]) == str :
+        if isinstance(options["args"], str) :
             self.target.add(interface.static_entities[options["args"]])
 
         else :

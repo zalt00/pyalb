@@ -12,7 +12,7 @@
 
             "porte_nw" : {
 
-                "activated" : false,
+                "activated" : true,
                 "rlcoords" : [2, 19],
                 "app_on" : "Images/Animations/Door_h/last.png",
                 "app_off" : "Images/PNGS/m╸_mur.png",
@@ -23,12 +23,150 @@
             
             "porte_2" : {
                 
-                "activated" : false,
+                "activated" : true,
                 "rlcoords" : [24, 20],
                 "app_on" : "Images/Animations/Door_h/last.png",
                 "app_off" : "Images/PNGS/m╸_mur.png",
                 "on_animation" : ["Door_h", 30],
                 "off_animation" : ["Door_h", 30, "reverse"]
+            },
+
+
+            "porte_lab1" : {
+
+                "activated" : false,
+                "rlcoords" : [28, 43],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
+            },
+
+
+            "porte_fin_lab_1" : {
+
+                "activated" : false,
+                "rlcoords" : [24, 28],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
+            },
+
+
+            "porte_fin_lab_2" : {
+
+                "activated" : false,
+                "rlcoords" : [24, 29],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
+            },
+
+
+            "porte_fin_lab" : {
+
+                "activated" : false,
+                "rlcoords" : [31, 35],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
+            },
+
+
+            "porte_acces_seconde_partie" : {
+
+                "activated" : true,
+                "rlcoords" : [41, 50],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
+            },
+
+
+            "porte_acces_seconde_partie_2" : {
+
+                "activated" : false,
+                "rlcoords" : [41, 49],
+                "app_on" : "Images/Animations/Door_h/last.png",
+                "app_off" : "Images/PNGS/m╸_mur.png",
+                "on_animation" : ["Door_h", 30],
+                "off_animation" : ["Door_h", 30, "reverse"]
+            }
+        },
+
+        "ButtonSwitch" : {
+
+
+            "button_nw" : {
+
+                "args" : ["Door/porte_2", "Door/porte_fin_lab"],
+                
+                "activated" : 0,
+                "rlcoords" : [2, 20],
+                "app_on" : "Images/PNGS/_C_nth.png",
+                "app_off" : "Images/PNGS/_D_nth.png",
+                "on_animation" : 0,
+                "off_animation" : 0
+            },
+
+
+            "button_2" : {
+
+                "args" : ["Door/porte_lab1", "Door/porte_nw", "Door/porte_fin_lab_2"],
+                
+                "activated" : 0,
+                "rlcoords" : [29, 14],
+                "app_on" : "Images/PNGS/_C_nth.png",
+                "app_off" : "Images/PNGS/_D_nth.png",
+                "on_animation" : 0,
+                "off_animation" : 0
+            },
+
+
+            "button_lab1" : {
+
+                "args" : ["Door/porte_fin_lab_1", "Door/porte_fin_lab_2"],
+                
+                "activated" : 0,
+                "rlcoords" : [33, 39],
+                "app_on" : "Images/PNGS/_C_nth.png",
+                "app_off" : "Images/PNGS/_D_nth.png",
+                "on_animation" : 0,
+                "off_animation" : 0
+            },
+
+
+            "button_lab2" : {
+
+                "args" : ["Door/porte_acces_seconde_partie", "Door/porte_acces_seconde_partie_2"],
+                
+                "activated" : 0,
+                "rlcoords" : [10, 37],
+                "app_on" : "Images/PNGS/_C_nth.png",
+                "app_off" : "Images/PNGS/_D_nth.png",
+                "on_animation" : 0,
+                "off_animation" : 0
+            }
+        },
+
+
+        "ButtonActivate" : {
+
+            "button_fin" : {
+                
+                "args" : "Door/porte_acces_seconde_partie",
+
+                "activated" : 0,
+                "rlcoords" : [26, 33],
+                "app_on" : "Images/PNGS/_C_nth.png",
+                "app_off" : "Images/PNGS/_D_nth.png",
+                "on_animation" : 0,
+                "off_animation" : 0
+                
             }
         }
 

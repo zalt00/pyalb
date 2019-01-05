@@ -1,0 +1,34 @@
+┏━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ┃                 SSSS                        ┃
+┃ ╹ LLLLLLLLLL ╻ C  SSSS  C   CCCCCCCCCC L   L  ┃
+┃   LLLLLLLLLL ┃            ╻ C┏━━━━━━┓C        ┃
+┃ ╻            ┃   CCCCCC   ┃ C┃      ┃C        ┃
+┣━┻━━━━━━━╸    ┃SS C┏━━┓C SS┃ C┃ ┏━━┓ ┃C   L   L┃
+┃S   S         ┃SS C┃DD┃C SS┃ C┃ ┣╸╺┫ ┃C        ┃
+┃  C  ╻ DCCCCD ┃SS C┃DD┃C SS┃ C┃ ┣╸╺┫ ┃C        ┃
+┃  S  ┃ C    C ┃SS C┗━━┛C SS┃ C┃ ┗━━┛ ┃C L   L  ┃
+┃ LDL ┃ C SS C ┃   CCCCCC   ┃ C┃      ┃C        ┃
+┃  S  ┃ C    C ┃            ┃ C┗━━━━━━┛C        ┃
+┃  C  ┃ DCCCCD ╹ C  SSSS  C ┃ CCCCCCCCCC   L   L┃
+┃S   S┃             SSSS    ┃                   ┃
+┣━━━━━┛ ╺━━━━━━━━━━━━━━━┳━━━┻━━━━━━━━━━━┓       ┃
+┃                       !               ┃L   L  ┃
+┃  L  L  DDD    SS    S ┃ SSS LLLLL SSS ┃       ┃
+┃             D SS    S ┃ SSS       SSS ╹       ┃
+┃ L  L    ┏┳┓ D SS    S ┃ SSS ╺━━━╸ SSS    L   L┃
+┃       D ┣╋┫ D SS    S ┃                       ┃
+┃  L  L D ┗┻┛   SS    S ┃       C        ┏━━━━━━┫
+┃       D       SS  ╻ S ┃ SSS DDCDD SSS  ┃      ┃
+┃ L  L     DDD  SS  ┃ S ┃ SSS DDCDD SSS  ┃ CCCC ┃
+┃                   ┃ S ┃ SSS DDCDD SSS  ┃ CDDC ┃
+┣━━━━━┳━━━━━━━━━━━╸ ┃ S ┃ SSS DDCDD SSS  ┃ CDDC ┃
+┃     ╹             ┃ S ┃       C        ┃ CCCC ┃
+┃ S S   CCCCCCCCCCC ! S ┃                ┃    ╺━┫
+┃       C         C ┃ S ┃ SSS ╺━━━╸ SSS  ┃  ╻   ┃
+┃ S S ╻ C CCCCCCC C ┃ S ┃ SSS       SSS  ┃  ┃ S ┃
+┃     ┃ C C     C C ┃ S ┃ SSS LLLLL SSS  ┃  ┃ S ┃
+┃ S S ┃ C CCCCCCC C ┃ S ┃                ┃  ┃ S ┃
+┃     ┃ C         C ┃ S ┗━━━━━━━━━━━━━━━━┛  ┃ S ┃
+┃ S S ┃ CCCCCCCCCCC ┃ S                     ┃   ┃
+┃     ┃             ┃                       ┃   ┃
+┗━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━┻━━━┛
