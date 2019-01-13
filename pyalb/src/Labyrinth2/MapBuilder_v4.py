@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import tkinter as tk
-from tkinter.filedialog import askopenfilename, asksaveasfilename
-from json import load as jsload
-from glob import glob
-import numpy as np
-from time import perf_counter
-from Images.imgs_manip import LabObj, PNGS, save_img, create_bg, img_load
 import logging as lg
-from logging.handlers import RotatingFileHandler
 import os
+import tkinter as tk
+from glob import glob
+from json import load as jsload
+from logging.handlers import RotatingFileHandler
+from time import perf_counter
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 
+import numpy as np
 
-
-
-
+from Images.imgs_manip import PNGS, LabObj, create_bg, img_load, save_img
 
 # CWD = r'C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2'
 # os.chdir(CWD)

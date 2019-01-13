@@ -109,9 +109,13 @@ def create_bg(choosen_map, file_name, var=None) :
                 if caract == tile.app:
                     list_globale[l].append(tile)
                     list_ligne_tab.append(tile.code)
-            
+    
 
 
+    if list_globale[-1] == [] :
+        list_globale = list_globale[:-1]
+    else :
+        list_globale_tab.append(np.concatenate(list_ligne_tab, axis=1))
     tab = np.concatenate(list_globale_tab, axis=0)
 
 

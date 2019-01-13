@@ -2,8 +2,8 @@
 
     "map_path" : "Cartes/weee.txt",
 
-    "pers_x" : 1,
-    "pers_y" : 1,
+    "pers_x" : 10,
+    "pers_y" : 7,
 
     "static_entities" :{
         "Door" : {
@@ -53,8 +53,8 @@
 
             "Marcel" : {
                 
-                "rlcoords" : [10, 10],
-                "comportement" : "RandomMoving"
+                "rlcoords" : [10, 30],
+                "behaviour" : ["VisualTracking", "kwargs", {"secondary_behaviour" : "RandomMoving"}]
 
             }
         }

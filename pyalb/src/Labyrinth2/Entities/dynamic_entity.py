@@ -2,7 +2,7 @@
 
 import tkinter as tk
 import numpy as np
-from numpy.random import randint, choice
+import Entities.behaviour.entity_behaviour as ebh
 
 
 class DynamicEntity :
@@ -17,6 +17,9 @@ class DynamicEntity :
         self.coords = np.array(options.get("coords", self.psimg(self.rlcoords)))
         
         self.speed = options.get("speed", 16)
+
+        self.way = options.get("way", "north")
+
 
         self.canvas = interface.play_canvas
         self.inter = interface
@@ -66,7 +69,7 @@ class DynamicEntity :
 
         
         xb, yb = new_rlcoords
-        if not (self.inter.list_globale[yb][xb].tag != "mur" and 
+        if not (self.inter.global_tab[yb, xb].tag != "mur" and 
             self.entity_test(xb, yb)
         ) :
 
@@ -105,69 +108,51 @@ class Bourpi(DynamicEntity) :
         self.img = tk.PhotoImage(file=img_path)
         self.item = self.canvas.create_image(self.coords[0], self.coords[1], image=self.img, tag="Entity")
         
-        exec("self.comportement = {}(self)".format(options["comportement"]))
+        args = list()
+        kwargs = dict()
 
+        if isinstance(options["behaviour"], list) :
+            behaviour = options["behaviour"][0]
 
-
-
-
-
-
-
-class Comportement :
-
-    def __init__(self, entity) :
-        self.entity = entity
-
-
-
-
-
-class RandomMoving(Comportement) :
-
-    def __init__(self, entity, arrlen=100, imediatly_run=True) :
-        Comportement.__init__(self, entity)
-
-        self.arrlen = arrlen
-        self.depxory = randint(0, 2, self.arrlen)
-        self.depposneg = choice((1, -1), self.arrlen)
-        self.i = 0
-
-        if imediatly_run :
-            self.run()
-
-
-    
-    def new_way(self):
-        
-        stop = False # Never True, "while True" would be the same.
-        while not stop :
-    
-            if self.i < self.arrlen :
-                results = np.zeros(2, dtype=np.int)
-
-                xory = self.depxory[self.i]
-                results[xory] = self.depposneg[self.i]
-                self.i+=1
-
-                return results
+            if options["behaviour"][1] == "kwargs" :
+                kwargs = options["behaviour"][2]
+                try :
+                    args = options["behaviour"][3:]
+                except IndexError :
+                    pass
 
             else :
+                args = options["behaviour"][1:]
 
-                self.arrlen *= 2
-                self.depxory = randint(0, 2, self.arrlen)
-                self.depposneg = choice((1, -1), self.arrlen)
-                self.i=0
-            
+        else :
+            behaviour = options["behaviour"]
 
 
-    def run(self, recall=True) :
 
-        if not self.entity.ismoving :
-            way = self.new_way()
-            new_rlcoords = self.entity.rlcoords + way
-            self.entity.move_entity(*way, new_rlcoords)
+        # Syntaxe :
+        # string seule -> nom de du comportement
+        # liste -> nom du comportement en premiere position, puis :
+        #    - les autres argument args
+        #         OU
+        #    - chaine "kwargs" en deuxieme position, suivi du dictionnaire des kwargs en troisieme,
+        #    suivit eventuellement d'arguments supplementaires args
+        #    - pour certains comportements il est necessaire d'avoir un argument 'secondary_behaviour' en kwargs
 
-        if recall :
-            self.entity.inter.after(24, self.run)
-        
+
+        try :
+            secondary_behaviour = getattr(ebh, kwargs["secondary_behaviour"])
+        except KeyError :
+            pass
+        else :
+            kwargs["secondary_behaviour"] = secondary_behaviour
+
+
+        self.behaviour = getattr(ebh, behaviour)(self, *args, **kwargs)
+
+
+
+
+
+
+
+

@@ -12,8 +12,8 @@ from time import perf_counter
 import numpy as np
 from PIL import Image
 
-import dynamic_entity as dyent
-import static_entity as stent
+import Entities.dynamic_entity as dyent
+import Entities.static_entity as stent
 from Images.imgs_manip import PNGS, LabObj, create_bg, save_img
 
 t1 = perf_counter()
@@ -271,7 +271,9 @@ class InGameInterface(tk.Frame) :
 
 
         global create_bg
-        width_tab, height_tab, self.list_globale = create_bg(carte, "Images/bg.png", temps)
+        width_tab, height_tab, list_globale = create_bg(carte, "Images/bg.png", temps)
+
+        self.global_tab = np.array(list_globale)
 
         self.pos_bg[0] = width_tab//2
         self.pos_bg[1] = height_tab//2
@@ -458,7 +460,7 @@ class InGameInterface(tk.Frame) :
 
         
         xb, yb = new_rlcoords
-        if not (self.list_globale[yb][xb].tag != "mur" and 
+        if not (self.global_tab[yb, xb].tag != "mur" and 
             self.entity_test(xb, yb)
         ) :
 
@@ -579,13 +581,8 @@ class InGameInterface(tk.Frame) :
         self.play_canvas.move("Entity", *(way*8))
 
         for entity in self.entities :
-            entity.coords -= way * 16
+            entity.coords -= way * 8
 
-        
-
-
-
-        
 
 
         if not self.rls["cam"] :
@@ -618,6 +615,7 @@ class InGameInterface(tk.Frame) :
             if self.touche_save["cam"] is not None :
                 if event.keysym.lower() == self.touche_save["cam"].keysym.lower() :
                     self.touche_save["cam"] = None
+
 
 
     def reinitialise(self, *args) :
