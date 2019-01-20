@@ -6,6 +6,7 @@ import numpy as np
 from numpy.random import choice, randint
 
 import Entities.behaviour.visual_tracking as vt
+from time import perf_counter
 
 
 class Behaviour :
@@ -115,24 +116,21 @@ class VisualTracking(Behaviour) :
 
 
     def run(self, recall=True) :
+        
         result = tuple()
         if not self.entity.ismoving :
+            
+
             result, aux_results = self.searching()
 
             if result is not None :
                 
-                
-                entity_way = getattr(self, self.entity.way)
-
-                y, x = entity_way[result[0]]
-                self.entity.move_entity(x, y, self.entity.rlcoords + (x, y))
-
-                self.last_known_coords = result[1]
-                vt.BaseCell.aux_target_coords["last_known_coords"] = self.last_known_coords
-
+                self.move_entity_towards_player(result)
                 
             elif (self.last_known_coords == self.entity.rlcoords[::-1]).all() :
-                self.secondary_behaviour.run(recall=False)
+                hasfound = self.look_around()
+                if not hasfound :
+                    self.secondary_behaviour.run()  
                 vt.BaseCell.aux_target_coords.pop("last_known_coords", None)
 
 
@@ -144,8 +142,62 @@ class VisualTracking(Behaviour) :
             else :
                 self.secondary_behaviour.run(recall=False)
 
+        
         if recall :
-            self.entity.canvas.after(150, self.run)
+            self.entity.canvas.after(16, self.run)
+    
+
+    # def look_around(self) :
+        
+    #     ways = ("north", "east", "south", "west")
+
+    #     stop = False
+    #     i = 0
+    #     while not stop :
+    #         try:
+    #             self.entity.way = ways[i]
+    #         except IndexError :
+    #             stop = True
+    #         else:
+    #             hasfound = self.run(recall=False)
+    #             if hasfound :
+    #                 stop = True
+    #             i += 1
+
+    #     if not hasfound :
+    #         self.secondary_behaviour.run()   
+
+    def look_around(self) :
+
+        ways = ("north", "east", "south", "west")
+
+        i = 0
+        stop = False
+
+        while not stop and i != 4 :
+
+            self.entity.way = ways[i]
+            result, others = self.searching()
+
+            if result is not None :
+                self.move_entity_towards_player(result)
+                stop = True
+            
+            i += 1
+
+        del(others)
+        return stop
+
+
+    def move_entity_towards_player(self, result) :
+
+        entity_way = getattr(self, self.entity.way)
+
+        y, x = entity_way[result[0]]
+        self.entity.move_entity(x, y, self.entity.rlcoords + (x, y))
+
+        self.last_known_coords = result[1]
+        vt.BaseCell.aux_target_coords["last_known_coords"] = self.last_known_coords
 
 
     def searching(self) :
@@ -158,9 +210,7 @@ class VisualTracking(Behaviour) :
             **getattr(self, self.entity.way)
         )
 
-        
         vt.BaseCell.cells[y, x] = vt.Base((y, x))
         vt.BaseCell.cells[y, x].start()
-
         return vt.BaseCell.result, vt.BaseCell.aux_results
         

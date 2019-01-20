@@ -14,6 +14,8 @@ from PIL import Image
 
 import Entities.dynamic_entity as dyent
 import Entities.static_entity as stent
+import Xbox_controller_threads as xcth
+from event_handlers import KeyboardHandler, XboxControllerHandler
 from Images.imgs_manip import PNGS, LabObj, create_bg, save_img
 
 t1 = perf_counter()
@@ -23,9 +25,19 @@ t1 = perf_counter()
 # CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
 # os.chdir(CWD)
 
+ISKEYBOARD = True
+
 NO_COLLISION = False
+CONTROLS = {
 
+    "pers_controls" : {
 
+        "up" : "ABS_Y+",
+        "down" : "ABS_Y-",
+        "right" : "ABS_X+",
+        "left" : 'ABS_X-'
+    }
+}
 temps = set() # fichiers temporaires
 
 
@@ -52,7 +64,7 @@ class Root(tk.Tk) :
         super().__init__(*args, **kwarks)
 
 
-        self.in_game = InGameInterface(self)
+        self.in_game = InGameInterface(self, CONTROLS)
         self.main_menu = MainMenuInterface(self, borderwidth=0, highlightthickness=0)
 
         self.com = dict()
@@ -211,7 +223,7 @@ class MainMenuInterface(tk.Frame) :
 
 class InGameInterface(tk.Frame) :
 
-    def __init__(self, root, **kwargs) :
+    def __init__(self, root, controls=dict(), sensibilities=dict(), **kwargs) :
 
 
         self.root = root
@@ -229,16 +241,69 @@ class InGameInterface(tk.Frame) :
 
         self.r = {"pers" : True, "cam" : True} # permet d'eviter l'appuyage prolongé de windows sur une touche
         self.rls = {"pers" : True, "cam" : True} # passe en True quand KeyRelease
-        self.touche_save = {"pers" : None, "cam" : None} # permet de faire des virages fluides, sans pause
-        self.touche = {"pers" : None, "cam" : None}
+        self.key_save = {"pers" : None, "cam" : None} # permet de faire des virages fluides, sans pause
+        self.key = {"pers" : None, "cam" : None}
 
         
         self.play_canvas.focus_set()
-        self.play_canvas.bind("<KeyPress>", self.clavier_press)
-        self.play_canvas.bind("<KeyRelease>", self.clavier_release)
+        # self.play_canvas.bind("<KeyPress>", self.clavier_press)
+        # self.play_canvas.bind("<KeyRelease>", self.clavier_release)
         self.play_canvas.pack(expand=True, fill="both")
 
+
+
+
+        self.sensibilities = sensibilities
+
+        for code in ('ABS_X', 'ABS_Y', 'ABS_RX', 'ABS_RY') :
+
+            if not (code in self.sensibilities) :
+                self.sensibilities[code] = 32000
+
+
+        for code in ('ABS_Z', 'ABS_RZ') :
+
+            if not (code in self.sensibilities) :
+                self.sensibilities[code] = 254
+
+
+
+
+
+
+        self.controls = controls
+        default_controls = {
+            
+            "pers_controls" : {
+                "up" : "Z",
+                "down" : "S",
+                "right" : "D",
+                "left" : "Q",
+            },
+
+            "cam_controls" : {
+                "cam_up" : "O",
+                "cam_down" : "L",
+                "cam_right" : "M",
+                "cam_left" : "K",
+            },
+
+            "return_to_main_menu" : "ESCAPE"
+
+        }
+
+        for key in default_controls.keys() :
+
+            if not (key in self.controls) :
+                self.controls[key] = default_controls[key]
+
+
         self.true = {"ontouch": lambda *a : True}
+
+
+
+
+
 
         self.animations = dict()
         for animations in glob("Images\\Animations\\*\\*a.png") : # chargement des animations
@@ -339,7 +404,17 @@ class InGameInterface(tk.Frame) :
                 self.dyentcoords[tuple(ent_options["rlcoords"])] = entity
 
 
-
+        if ISKEYBOARD :
+            self.event_handler = KeyboardHandler(self.keys_handler, self.key_release)
+            self.play_canvas.bind("<KeyPress>", self.event_handler.key_press)
+            self.play_canvas.bind("<KeyRelease>", self.event_handler.key_release)
+            self.play_canvas.focus_set()
+        else :
+            self.event_handler = XboxControllerHandler(self.keys_handler, self.key_release, self.sensibilities)
+            self.listening = xcth.Listening(self)
+            self.reading = xcth.Reading(self, self.event_handler.key_input)
+            self.listening.run()
+            self.reading.run()
 
 
 
@@ -354,6 +429,14 @@ class InGameInterface(tk.Frame) :
 
 
 
+    # def inputs_handler(self, evt) :
+
+    #     try :
+    #         key = evt.keysym.upper()
+    #     except AttributeError :
+    #         key = evt.code.upper()
+
+
 
 
     def psimg (self, pos) :
@@ -361,84 +444,80 @@ class InGameInterface(tk.Frame) :
 
 
 
-    def clavier_press (self, event) :
-        touche = event.keysym.lower()
-        if touche == "escape" : self.reinitialise()
+    def keys_handler(self, key) :
+        if key == self.controls["return_to_main_menu"] : self.reinitialise()
 
-        if touche in "zqsd" :
+        if key in self.controls["pers_controls"].values() :
 
-            if self.r["pers"] :
-                self._pers_evt(touche)
+            if True : # self.r["pers"] :
+                self._pers_evt(key)
             else :
-                self.touche_save["pers"] = event
+                self.key_save["pers"] = key
 
 
-        if touche in "oklm" :
+        if key in self.controls["cam_controls"].values() :
 
             if self.r["cam"] :
-                self._bg_evt(touche)      
+                self._bg_evt(key)      
             else :
-                self.touche_save["cam"] = event
+                self.key_save["cam"] = key
 
 
-    def _bg_evt (self, touche) :
+    def _bg_evt (self, key) :
         self.r["cam"] = False
-        self.touche_save["cam"] = None
-        self.touche["cam"] = touche.lower()
+        self.key_save["cam"] = None
+        self.key["cam"] = key.lower()
         self.rls["cam"] = False
 
 
-        if self.touche["cam"] == "l" :
+        if self.key["cam"] == "l" :
             self.move_bg(0, -1)
             
-        elif self.touche["cam"] == "o" :
+        elif self.key["cam"] == "o" :
             self.move_bg(0, 1)
 
-        elif self.touche["cam"] == "k" :
+        elif self.key["cam"] == "k" :
             self.move_bg(1, 0)
 
-        elif self.touche["cam"] == "m" :
+        elif self.key["cam"] == "m" :
             self.move_bg(-1, 0)
 
         else :
             self.r["cam"] = True            
             
 
-    def _pers_evt (self, touche) :
-        self.r["pers"] = False
-        self.touche_save["pers"] = None
-        self.touche["pers"] = touche.lower()
+    def _pers_evt (self, key) :
 
             
         self.rls["pers"] = False
            
             
-        if self.touche["pers"] == "z" :
+        if key == self.controls["pers_controls"]["up"] :
             new_rlcoords = self.rlcoords + (0, -1)
             new_coords = self.coords + (0, -16)
             ispers = self.test_persorcam_move[(0, -1)](new_coords)
             self.move_pers(0, -1, new_rlcoords, new_coords, ispers)
 
-        elif self.touche["pers"] == "s" :
+        elif key == self.controls["pers_controls"]["down"] :
             new_rlcoords = self.rlcoords + (0, 1)
             new_coords = self.coords + (0, 16)
             ispers = self.test_persorcam_move[(0, 1)](new_coords)
             self.move_pers(0, 1, new_rlcoords, new_coords, ispers)
 
-        elif self.touche["pers"] == "d" :
+        elif key == self.controls["pers_controls"]["right"] :
             new_rlcoords = self.rlcoords + (1, 0)
             new_coords = self.coords + (16, 0)
             ispers = self.test_persorcam_move[(1, 0)](new_coords)
             self.move_pers(1, 0, new_rlcoords, new_coords, ispers)
                         
-        elif self.touche["pers"] == "q" :
+        elif key == self.controls["pers_controls"]["left"] :
             new_rlcoords = self.rlcoords + (-1, 0)
             new_coords = self.coords + (-16, 0)
             ispers = self.test_persorcam_move[(-1, 0)](new_coords)
             self.move_pers(-1, 0, new_rlcoords, new_coords, ispers)
 
         else :
-            self.r["pers"] = True
+            self.event_handler.end_of_animation()
 
 
     def entity_test(self, x, y) :
@@ -482,29 +561,33 @@ class InGameInterface(tk.Frame) :
                 self._movecam(n_2move, way, 8)
             else :
                 self._movepers(n_2move, way, 8)
-
+        
         else :
-            if not self.rls["pers"] :
-                self.after(128, self._mur_keytest)
-            else :
-                self.r["pers"] = True
-                if self.touche_save["pers"] is not None :
-                    if self.touche_save["pers"].keysym.lower() != self.touche :
-                        self.clavier_press(self.touche_save["pers"])
+
+            self.event_handler.end_of_animation()
+
+        # else :
+        #     if not self.rls["pers"] :
+        #         self.after(128, self._mur_keytest)
+            # else :
+            #     self.r["pers"] = True
+            #     if self.key_save["pers"] is not None :
+            #         if self.key_save["pers"].keysym.lower() != self.key :
+            #             self.keys_handler(self.key_save["pers"])
             
 
 
-    def _mur_keytest(self) : 
-        "Permet d'\u00E9viter un arr\u00EAt apr\u00E8s rencontre avec un mur."
+    # def _mur_keytest(self) : 
+    #     "Permet d'\u00E9viter un arr\u00EAt apr\u00E8s rencontre avec un mur."
 
-        if self.rls["pers"] :
-            self.r["pers"] = True
-            if self.touche_save["pers"] is not None :
-                if self.touche_save["pers"].keysym.lower() != self.touche :
-                    self.clavier_press(self.touche_save["pers"])
+    #     if self.rls["pers"] :
+    #         self.r["pers"] = True
+    #         if self.key_save["pers"] is not None :
+    #             if self.key_save["pers"].keysym.lower() != self.key :
+    #                 self.keys_handler(self.key_save["pers"])
 
-        else :
-            self.after(128, self._mur_keytest)
+    #     else :
+    #         self.after(128, self._mur_keytest)
         
 
 
@@ -522,16 +605,24 @@ class InGameInterface(tk.Frame) :
         self.rlcoords += way
 
 
+
         if not self.rls["pers"] :
             new_rlcoords = self.rlcoords + way
             new_coords = self.coords + way * 16
             ispers = self.test_persorcam_move[tuple(way)](new_coords)
             self.after(6, self.move_pers, *way, new_rlcoords, new_coords, ispers)
+        
+        elif self.event_handler.saved_key != "" :
+            self.event_handler.key = self.event_handler.saved_key
+            self.event_handler.saved_key = ""
+            self.keys_handler(self.event_handler.key)
         else :
-            self.r["pers"] = True
-            if self.touche_save["pers"] is not None :
-                if self.touche_save["pers"].keysym.lower() != self.touche :
-                    self.clavier_press(self.touche_save["pers"])
+            self.event_handler.end_of_animation()
+        # else :
+        #     self.r["pers"] = True
+        #     if self.key_save["pers"] is not None :
+        #         if self.key_save["pers"].keysym.lower() != self.key :
+        #             self.keys_handler(self.key_save["pers"])
 
 
     def _movepers(self, n_2move, way, nb) :
@@ -589,32 +680,31 @@ class InGameInterface(tk.Frame) :
             self.after(16, self._movebg, way)
         else :
             self.r["cam"] = True
-            if self.touche_save["cam"] is not None :
-                if self.touche_save["cam"].keysym.lower() != self.touche :
-                    self.clavier_press(self.touche_save["cam"])
+            if self.key_save["cam"] is not None :
+                if self.key_save["cam"].keysym.lower() != self.key :
+                    self.keys_handler(self.key_save["cam"])
 
 
 
 
 
 
-    def clavier_release(self, event):
+    def key_release(self, key):
         
-        touche = event.keysym.lower()
 
-        if touche in "zqsd" :
+        if key in self.controls["pers_controls"].values() :
             self.rls["pers"] = True
 
-            if self.touche_save["pers"] is not None :
-                if event.keysym.lower() == self.touche_save["pers"].keysym.lower() :
-                    self.touche_save["pers"] = None
+            # if self.key_save["pers"] is not None :
+            #     if event.keysym.lower() == self.key_save["pers"].keysym.lower() :
+            #         self.key_save["pers"] = None
         
-        elif touche in "olmk" :
+        elif key in self.controls["cam_controls"].values() :
             self.rls["cam"] = True
 
-            if self.touche_save["cam"] is not None :
-                if event.keysym.lower() == self.touche_save["cam"].keysym.lower() :
-                    self.touche_save["cam"] = None
+            # if self.key_save["cam"] is not None :
+            #     if event.keysym.lower() == self.key_save["cam"].keysym.lower() :
+            #         self.key_save["cam"] = None
 
 
 
