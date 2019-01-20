@@ -50,34 +50,49 @@ class KeyboardHandler(EventHandler) :
 
 class XboxControllerHandler(EventHandler) :
 
-    def __init__(self, key_press_func, key_release_func, sensibilities) :
+    def __init__(self, key_press_func, key_release_func) :
         """To connect with Xbox_controller_threads Reading thread event handler"""
         EventHandler.__init__(self, key_press_func, key_release_func)
 
-        self.sensibilities = sensibilities
-        self.isreleasing = False # permet de reconnaitre un release avec un joystick
         self.saved_key = ""
+        self.r = True
+        self.key = ""
 
 
-    def key_input(self, evt) :
-        """evt -> xbox controller event"""
-        self.key = evt.code.upper()
-        if evt.ev_type == "Key" :
-            if evt.state :
-                self.key_press_func(self.key)
-            else :
-                self.key_release_func(self.key)
+    def key_input(self, evt, simple_state=None, releasing=False):
 
-        if evt.ev_type == "Absolute" :
-            if (abs(evt.state) >= self.sensibilities[self.key]) and (not self.isreleasing):
-                self.isreleasing = True
-                a = '+' if evt.state > 0 else "-"
-                self.key_press_func(self.key + a)
 
-            if (abs(evt.state) <= self.sensibilities[self.key]) and self.isreleasing :
-                self.isreleasing = False
-                a = '+' if evt.state > 0 else "-"
-                self.key_release_func(self.key + a)
+        if simple_state is not None :
+            sign = '+' if simple_state > 0 else '-'
+            key = (evt.code + sign).upper()
+        else :
+            key = evt.code.upper()
+
+
+        if not releasing :
+            self.key_press(key)
+        else :
+            self.key_release(key)
+
+
+    def key_press(self, key) :
+
+        if self.r :
+            self.r = False
+            self.key = key
+            self.saved_key = ""
+            self.key_press_func(self.key)
+        else :
+            self.saved_key = key
+
+
+    def key_release(self, key) :
+        
+        if key == self.key :
+            self.key_release_func(self.key)
+        elif key == self.saved_key :
+            self.saved_key = ""
+
 
     def end_of_animation(self) :
-        pass
+        self.r = True

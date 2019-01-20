@@ -2,11 +2,12 @@
 
 import logging as lg
 import os
+import pickle
 import tkinter as tk
-import tkinter.font as tkFont
 from glob import glob
 from json import load as jsload
 from logging.handlers import RotatingFileHandler
+from threading import enumerate as enumerate_threads
 from time import perf_counter
 
 import numpy as np
@@ -25,19 +26,10 @@ t1 = perf_counter()
 # CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
 # os.chdir(CWD)
 
-ISKEYBOARD = True
+ISKEYBOARD = False
 
 NO_COLLISION = False
-CONTROLS = {
 
-    "pers_controls" : {
-
-        "up" : "ABS_Y+",
-        "down" : "ABS_Y-",
-        "right" : "ABS_X+",
-        "left" : 'ABS_X-'
-    }
-}
 temps = set() # fichiers temporaires
 
 
@@ -64,7 +56,7 @@ class Root(tk.Tk) :
         super().__init__(*args, **kwarks)
 
 
-        self.in_game = InGameInterface(self, CONTROLS)
+        self.in_game = InGameInterface(self)
         self.main_menu = MainMenuInterface(self, borderwidth=0, highlightthickness=0)
 
         self.com = dict()
@@ -79,7 +71,7 @@ class Root(tk.Tk) :
 
 
     def reinitialise(self, attr, new_class, **kwargs) :
-
+        
         getattr(self, attr).destroy()
         setattr(self, attr, new_class(self, **kwargs))
         
@@ -114,12 +106,6 @@ class MainMenuInterface(tk.Frame) :
 
         self.canvas.pack(fill="both", expand=True)
 
-        # self.img_txt = tk.PhotoImage(file="Images/txt_main_menu.png")
-        # self.canvas.create_image(
-        #     root.winfo_screenwidth() // 2,
-        #     root.winfo_screenheight() // 2 + root.winfo_screenheight() // 4,
-        #     image = self.img_txt
-        # )
 
         self.start_txt = self.canvas.create_text(
             root.winfo_screenwidth() // 7,
@@ -141,21 +127,10 @@ class MainMenuInterface(tk.Frame) :
             tag="text"
         )
 
-        # self.txt_start_inactive = tk.PhotoImage(file="Images/TXT/txt_start.png")
-        # self.txt_start_active = tk.PhotoImage(file="Images/TXT/txt_start2.png")
-
-        # self.start_txt = self.canvas.create_image(
-        #     root.winfo_screenwidth() // 8 *7,
-        #     root.winfo_screenheight() // 7 *5,
-        #     activeimage=self.txt_start_active,
-        #     image=self.txt_start_inactive
-        # )
-
 
 
         self.canvas.bind("<Button-1>", self.click)
 
-        # self.img_but = tk.PhotoImage(file="Images/Buttons/button.png")
 
 
 
@@ -163,10 +138,11 @@ class MainMenuInterface(tk.Frame) :
 
         item = self.canvas.find_closest(evt.x, evt.y)
         
-        if item[0] == self.canvas.find_withtag(self.start_txt)[0] :
-            self.start()
-        elif item[0] == self.canvas.find_withtag(self.quit_txt)[0] :
-            self.root.quit()
+        if item :
+            if item[0] == self.canvas.find_withtag(self.start_txt)[0] :
+                self.start()
+            elif item[0] == self.canvas.find_withtag(self.quit_txt)[0] :
+                self.root.quit()
 
 
     def start(self, *args) :
@@ -223,7 +199,7 @@ class MainMenuInterface(tk.Frame) :
 
 class InGameInterface(tk.Frame) :
 
-    def __init__(self, root, controls=dict(), sensibilities=dict(), **kwargs) :
+    def __init__(self, root, **kwargs) :
 
 
         self.root = root
@@ -239,67 +215,24 @@ class InGameInterface(tk.Frame) :
         self.pos_bg = np.zeros(2, dtype=np.int)
 
 
-        self.r = {"pers" : True, "cam" : True} # permet d'eviter l'appuyage prolongé de windows sur une touche
         self.rls = {"pers" : True, "cam" : True} # passe en True quand KeyRelease
-        self.key_save = {"pers" : None, "cam" : None} # permet de faire des virages fluides, sans pause
-        self.key = {"pers" : None, "cam" : None}
 
         
         self.play_canvas.focus_set()
-        # self.play_canvas.bind("<KeyPress>", self.clavier_press)
-        # self.play_canvas.bind("<KeyRelease>", self.clavier_release)
         self.play_canvas.pack(expand=True, fill="both")
 
 
 
+        with open('data', 'rb') as data_file :
+            unpickler = pickle.Unpickler(data_file)
+            data = unpickler.load()
 
-        self.sensibilities = sensibilities
+        self.sensibilities = data['controller_sensibility']
 
-        for code in ('ABS_X', 'ABS_Y', 'ABS_RX', 'ABS_RY') :
-
-            if not (code in self.sensibilities) :
-                self.sensibilities[code] = 32000
-
-
-        for code in ('ABS_Z', 'ABS_RZ') :
-
-            if not (code in self.sensibilities) :
-                self.sensibilities[code] = 254
-
-
-
-
-
-
-        self.controls = controls
-        default_controls = {
-            
-            "pers_controls" : {
-                "up" : "Z",
-                "down" : "S",
-                "right" : "D",
-                "left" : "Q",
-            },
-
-            "cam_controls" : {
-                "cam_up" : "O",
-                "cam_down" : "L",
-                "cam_right" : "M",
-                "cam_left" : "K",
-            },
-
-            "return_to_main_menu" : "ESCAPE"
-
-        }
-
-        for key in default_controls.keys() :
-
-            if not (key in self.controls) :
-                self.controls[key] = default_controls[key]
-
-
-        self.true = {"ontouch": lambda *a : True}
-
+        if ISKEYBOARD :
+            self.controls = data['keyboard_controls']
+        else :
+            self.controls = data['controller_controls']
 
 
 
@@ -410,12 +343,9 @@ class InGameInterface(tk.Frame) :
             self.play_canvas.bind("<KeyRelease>", self.event_handler.key_release)
             self.play_canvas.focus_set()
         else :
-            self.event_handler = XboxControllerHandler(self.keys_handler, self.key_release, self.sensibilities)
-            self.listening = xcth.Listening(self)
-            self.reading = xcth.Reading(self, self.event_handler.key_input)
-            self.listening.run()
-            self.reading.run()
-
+            self.event_handler = XboxControllerHandler(self.keys_handler, self.key_release)
+            self.thread = xcth.ListeningThread(self.sensibilities, self.event_handler.key_input)
+            self.thread.start()
 
 
 
@@ -429,15 +359,6 @@ class InGameInterface(tk.Frame) :
 
 
 
-    # def inputs_handler(self, evt) :
-
-    #     try :
-    #         key = evt.keysym.upper()
-    #     except AttributeError :
-    #         key = evt.code.upper()
-
-
-
 
     def psimg (self, pos) :
         return (4+8*pos)*2
@@ -447,43 +368,40 @@ class InGameInterface(tk.Frame) :
     def keys_handler(self, key) :
         if key == self.controls["return_to_main_menu"] : self.reinitialise()
 
-        if key in self.controls["pers_controls"].values() :
+        elif key in self.controls["pers_controls"].values() :
 
-            if True : # self.r["pers"] :
-                self._pers_evt(key)
-            else :
-                self.key_save["pers"] = key
+            self._pers_evt(key)
 
 
-        if key in self.controls["cam_controls"].values() :
-
-            if self.r["cam"] :
-                self._bg_evt(key)      
-            else :
-                self.key_save["cam"] = key
-
-
-    def _bg_evt (self, key) :
-        self.r["cam"] = False
-        self.key_save["cam"] = None
-        self.key["cam"] = key.lower()
-        self.rls["cam"] = False
+        elif key in self.controls["cam_controls"].values() :
+            pass # todo
+            # if self.r["cam"] :
+            #     self._bg_evt(key)      
+            # else :
+            #     self.key_save["cam"] = key
 
 
-        if self.key["cam"] == "l" :
-            self.move_bg(0, -1)
+    # def _bg_evt (self, key) :
+    #     self.r["cam"] = False
+    #     self.key_save["cam"] = None
+    #     self.key["cam"] = key.lower()
+    #     self.rls["cam"] = False
+
+
+    #     if self.key["cam"] == "l" :
+    #         self.move_bg(0, -1)
             
-        elif self.key["cam"] == "o" :
-            self.move_bg(0, 1)
+    #     elif self.key["cam"] == "o" :
+    #         self.move_bg(0, 1)
 
-        elif self.key["cam"] == "k" :
-            self.move_bg(1, 0)
+    #     elif self.key["cam"] == "k" :
+    #         self.move_bg(1, 0)
 
-        elif self.key["cam"] == "m" :
-            self.move_bg(-1, 0)
+    #     elif self.key["cam"] == "m" :
+    #         self.move_bg(-1, 0)
 
-        else :
-            self.r["cam"] = True            
+    #     else :
+    #         self.r["cam"] = True            
             
 
     def _pers_evt (self, key) :
@@ -543,8 +461,6 @@ class InGameInterface(tk.Frame) :
             self.entity_test(xb, yb)
         ) :
 
-            # n_2move = [2, 0] # x puis y
-            # xory = 0 # 0 pour x, 1 pour y
             mur = True
 
 
@@ -565,32 +481,6 @@ class InGameInterface(tk.Frame) :
         else :
 
             self.event_handler.end_of_animation()
-
-        # else :
-        #     if not self.rls["pers"] :
-        #         self.after(128, self._mur_keytest)
-            # else :
-            #     self.r["pers"] = True
-            #     if self.key_save["pers"] is not None :
-            #         if self.key_save["pers"].keysym.lower() != self.key :
-            #             self.keys_handler(self.key_save["pers"])
-            
-
-
-    # def _mur_keytest(self) : 
-    #     "Permet d'\u00E9viter un arr\u00EAt apr\u00E8s rencontre avec un mur."
-
-    #     if self.rls["pers"] :
-    #         self.r["pers"] = True
-    #         if self.key_save["pers"] is not None :
-    #             if self.key_save["pers"].keysym.lower() != self.key :
-    #                 self.keys_handler(self.key_save["pers"])
-
-    #     else :
-    #         self.after(128, self._mur_keytest)
-        
-
-
 
     
     def _todo_after_moving(self, way, ispers=True) :
@@ -618,11 +508,7 @@ class InGameInterface(tk.Frame) :
             self.keys_handler(self.event_handler.key)
         else :
             self.event_handler.end_of_animation()
-        # else :
-        #     self.r["pers"] = True
-        #     if self.key_save["pers"] is not None :
-        #         if self.key_save["pers"].keysym.lower() != self.key :
-        #             self.keys_handler(self.key_save["pers"])
+
 
 
     def _movepers(self, n_2move, way, nb) :
@@ -651,38 +537,38 @@ class InGameInterface(tk.Frame) :
 
 
         
-    def move_bg(self, x, y) :
+    # def move_bg(self, x, y) :
         
-        way = np.array((x, y))
+    #     way = np.array((x, y))
         
 
 
 
-        self._movebg(way)
+    #     self._movebg(way)
 
 
-    def _movebg(self, way) :
+    # def _movebg(self, way) :
             
-        self.coords += way * 8
-        self.play_canvas.move(self.pers, *(way*8))
+    #     self.coords += way * 8
+    #     self.play_canvas.move(self.pers, *(way*8))
 
-        self.pos_bg += way * 8
-        self.play_canvas.move(self.bg, *(way*8))
+    #     self.pos_bg += way * 8
+    #     self.play_canvas.move(self.bg, *(way*8))
 
-        self.play_canvas.move("Entity", *(way*8))
+    #     self.play_canvas.move("Entity", *(way*8))
 
-        for entity in self.entities :
-            entity.coords -= way * 8
+    #     for entity in self.entities :
+    #         entity.coords -= way * 8
 
 
 
-        if not self.rls["cam"] :
-            self.after(16, self._movebg, way)
-        else :
-            self.r["cam"] = True
-            if self.key_save["cam"] is not None :
-                if self.key_save["cam"].keysym.lower() != self.key :
-                    self.keys_handler(self.key_save["cam"])
+    #     if not self.rls["cam"] :
+    #         self.after(16, self._movebg, way)
+    #     else :
+    #         self.r["cam"] = True
+    #         if self.key_save["cam"] is not None :
+    #             if self.key_save["cam"].keysym.lower() != self.key :
+    #                 self.keys_handler(self.key_save["cam"])
 
 
 
@@ -695,16 +581,13 @@ class InGameInterface(tk.Frame) :
         if key in self.controls["pers_controls"].values() :
             self.rls["pers"] = True
 
-            # if self.key_save["pers"] is not None :
-            #     if event.keysym.lower() == self.key_save["pers"].keysym.lower() :
-            #         self.key_save["pers"] = None
         
         elif key in self.controls["cam_controls"].values() :
             self.rls["cam"] = True
 
-            # if self.key_save["cam"] is not None :
-            #     if event.keysym.lower() == self.key_save["cam"].keysym.lower() :
-            #         self.key_save["cam"] = None
+        else :
+            self.event_handler.end_of_animation()
+
 
 
 
@@ -714,6 +597,13 @@ class InGameInterface(tk.Frame) :
         self.root.reinitialise("main_menu", MainMenuInterface)
 
         self.root.change_page("in_game", "main_menu")
+
+
+    def destroy(self) :
+        thread = getattr(self, 'thread', None)
+        if thread is not None :
+            thread.stop = True
+        tk.Frame.destroy(self)
         
 
 
@@ -735,3 +625,11 @@ root.mainloop()
 
 for temp in temps :
     os.remove(temp)
+
+
+for thread in enumerate_threads() : # stop remaining threads (only usefull if something forces the game to shutdown)
+    if isinstance(thread, xcth.ListeningThread) :
+        thread.stop = True
+        print("Si ce message persiste, veuillez appuyer sur un bouton de votre controlleur.")
+        logger.warning('''The game didn't shutdown properly. Please use the "quit" option in the main menu to quit the game''')
+        thread.join()
