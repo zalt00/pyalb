@@ -21,7 +21,9 @@ keyboard_controls = {
         "cam_left" : "K",
     },
 
-    "return_to_main_menu" : "ESCAPE"
+    'menu' : {
+        "return_to_main_menu" : "ESCAPE"
+    }
 
 }
 
@@ -42,7 +44,9 @@ controller_controls = {
         "left" : "ABS_RX-",
     },
 
-    "return_to_main_menu" : "BTN_SELECT"
+    'menu' : {
+        "return_to_main_menu" : "BTN_SELECT"
+    }
 
 }
 
@@ -62,12 +66,18 @@ controller_sensibility = {
 
 }
 
+options = {
+
+    "ISKEYBOARD" : True
+}
+
 
 data = {
 
     "keyboard_controls" : keyboard_controls,
     "controller_controls" : controller_controls,
-    "controller_sensibility" : controller_sensibility
+    "controller_sensibility" : controller_sensibility,
+    "options" : options
 }
 
 with open("data", 'wb') as data_file :

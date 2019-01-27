@@ -4,6 +4,7 @@ import logging as lg
 import os
 import pickle
 import tkinter as tk
+import tkinter.ttk as ttk
 from glob import glob
 from json import load as jsload
 from logging.handlers import RotatingFileHandler
@@ -11,6 +12,7 @@ from threading import enumerate as enumerate_threads
 from time import perf_counter
 
 import numpy as np
+from inputs import devices
 from PIL import Image
 
 import Entities.dynamic_entity as dyent
@@ -26,7 +28,6 @@ t1 = perf_counter()
 # CWD = r"C:\Users\Timelam\git\pyalb\pyalb\src\Labyrinth2"
 # os.chdir(CWD)
 
-ISKEYBOARD = False
 
 NO_COLLISION = False
 
@@ -76,6 +77,26 @@ class Root(tk.Tk) :
         setattr(self, attr, new_class(self, **kwargs))
         
 
+    def save(self) :
+
+        try :
+            options_data = self.com['options_data']
+        except KeyError :
+            pass
+        else :
+            with open('data', 'wb') as data_file :
+                pickler = pickle.Pickler(data_file)
+                pickler.dump(options_data)
+
+
+
+
+
+
+###################################################################################################
+
+
+
 
 
 
@@ -99,34 +120,66 @@ class MainMenuInterface(tk.Frame) :
             self.menu_map_dis[b] = a
         
 
-        self.canvas = tk.Canvas(self)
+        self.canvas = tk.Canvas(self, highlightthickness=0)
 
         self.img = tk.PhotoImage(file="Images/main_menu_bg_resized.png")
         self.canvas.create_image(0, 0, image=self.img, anchor="nw")
 
         self.canvas.pack(fill="both", expand=True)
 
+        self.screenwidth = root.winfo_screenwidth()
+        self.screenheight = root.winfo_screenheight()
 
-        self.start_txt = self.canvas.create_text(
-            root.winfo_screenwidth() // 7,
-            root.winfo_screenheight() // 7 *5,
-            text="Start",
+
+        with open('data', 'rb') as data_file :
+            unpickler = pickle.Unpickler(data_file)
+            self.options_data = unpickler.load()
+
+
+        self.aff_txt()
+
+
+    def aff_txt(self):
+
+
+        self.canvas.bind("<Button-1>", self.click)
+
+        self.mainmenu_txt = dict()
+
+        start_txt = self.canvas.create_text(
+            self.screenwidth // 7,
+            self.screenheight // 7 * 5 - 100,
+            text="New game",
             fill="white",
             activefill="gray",
             font=["Lucida", 38],
             tag="text"
         )
+        self.mainmenu_txt[start_txt] = self.start
 
-        self.quit_txt = self.canvas.create_text(
-            root.winfo_screenwidth() // 7,
-            root.winfo_screenheight() // 7 *5 + 100,
-            text="Quit ",
+
+        quit_txt = self.canvas.create_text(
+            self.screenwidth // 7 - 80,
+            self.screenheight // 7 * 5 + 100,
+            text="Quit",
             fill="white",
             activefill="gray",
             font=["Lucida", 38],
             tag="text"
         )
+        self.mainmenu_txt[quit_txt] = self.quit
+        
 
+        options_txt = self.canvas.create_text(
+            self.screenwidth // 7 - 40,
+            self.screenheight // 7 * 5,
+            text="Options",
+            fill="white",
+            activefill="gray",
+            font=["Lucida", 38],
+            tag="text"
+        )
+        self.mainmenu_txt[options_txt] = self.open_options
 
 
         self.canvas.bind("<Button-1>", self.click)
@@ -139,13 +192,10 @@ class MainMenuInterface(tk.Frame) :
         item = self.canvas.find_closest(evt.x, evt.y)
         
         if item :
-            if item[0] == self.canvas.find_withtag(self.start_txt)[0] :
-                self.start()
-            elif item[0] == self.canvas.find_withtag(self.quit_txt)[0] :
-                self.root.quit()
+            self.mainmenu_txt.get(item[0], lambda *a : None)()
 
 
-    def start(self, *args) :
+    def start(self) :
 
         self.canvas.delete("text")
 
@@ -156,11 +206,11 @@ class MainMenuInterface(tk.Frame) :
 
         for i, carte in enumerate(self.menu_map_dis.keys()) :
 
-            self.button_list.append(tk.Button(
+            self.button_list.append(ttk.Button(
                 self.map_choice_frame,
                 text=carte,
-                command=lambda path=carte : self.get_map(path),
-                width=50
+                command=lambda path=carte : self.prepare2start(path),
+                width=70
             ))
 
             self.button_list[i].pack()
@@ -169,31 +219,202 @@ class MainMenuInterface(tk.Frame) :
 
 
         self.window = self.canvas.create_window(
-            root.winfo_screenwidth() // 2,
-            root.winfo_screenheight() // 4 *3,
+            self.screenwidth // 2,
+            self.screenheight // 4 * 3,
             window=self.map_choice_frame
         )
 
-        self.canvas.delete(self.start_txt)
 
 
 
-    def get_map (self, carte) :
 
+    def open_options(self) :
+
+        self.canvas.delete("text")
+        self.canvas.unbind("<Button-1>")
+        
+        self.option_frame = tk.Frame(self.canvas)
+
+        self.isxbox_var = tk.IntVar()
+
+        self.isxbox_checkbut = ttk.Checkbutton(
+            self.option_frame,
+            text="Use Xbox controller",
+            variable=self.isxbox_var,
+        )
+
+        if not self.options_data['options']['ISKEYBOARD'] :
+            self.isxbox_checkbut.invoke()
+
+        self.isxbox_checkbut.grid(row=0, column=0)
+
+    
+        self.apply_b = ttk.Button(self.option_frame, text='Apply', command=self.save_options)
+        self.apply_b.grid(row=1, column=0)
+
+
+        self.kbcrtl_lframe = tk.LabelFrame(self.option_frame, text="Keyboard contols")
+
+        self.kbbut_ctrl_dict = dict()
+        self.kbbut_categories = dict()
+        i = 0
+        for categorie_name, categorie in self.options_data['keyboard_controls'].items() :
+
+            self.kbbut_categories[categorie_name] = tk.LabelFrame(self.kbcrtl_lframe, text=categorie_name)
+            for action, key in categorie.items() :
+                i += 1
+                self.kbbut_ctrl_dict[action + categorie_name] = ttk.Button(
+                    self.kbbut_categories[categorie_name],
+                    text=key,
+                    command=lambda action=action, categorie=categorie_name : self.kb_change_ctrl(action, categorie)
+                )
+
+                self.kbbut_ctrl_dict[action + categorie_name].grid(row=i, column=0)
+                tk.Label(self.kbbut_categories[categorie_name], text=action).grid(row=i, column=1)
+
+            self.kbbut_categories[categorie_name].pack()
+
+
+
+        self.kbcrtl_lframe.grid(row=0, column=1)
+
+        self.empty_text = dict()
+        # lors d'un appuie sur un bouton, son texte devient vide,
+        # cela permet qu'il se reremplisse dans le cas où aucune touche n'est pressée
+
+
+        self.xcrtl_lframe = tk.LabelFrame(self.option_frame, text="Controller contols")
+
+        self.xbut_ctrl_dict = dict()
+        self.xbut_categories = dict()
+        i = 0
+        for categorie_name, categorie in self.options_data['controller_controls'].items() :
+
+            self.xbut_categories[categorie_name] = tk.LabelFrame(self.xcrtl_lframe, text=categorie_name)
+            for action, key in categorie.items() :
+                i += 1
+                self.xbut_ctrl_dict[action + categorie_name] = ttk.Button(
+                    self.xbut_categories[categorie_name],
+                    text=key,
+                    command=lambda action=action, categorie=categorie_name : self.x_change_ctrl(action, categorie)
+                )
+
+                self.xbut_ctrl_dict[action + categorie_name].grid(row=i, column=0)
+                tk.Label(self.xbut_categories[categorie_name], text=action).grid(row=i, column=1)
+
+            self.xbut_categories[categorie_name].pack()
+
+
+
+        self.xcrtl_lframe.grid(row=0, column=2)
+
+
+
+
+        self.option_window = self.canvas.create_window(
+            self.screenwidth // 2,
+            self.screenheight // 4 *3,
+            window=self.option_frame
+        )
+        
+
+
+    def kb_change_ctrl(self, action, categorie) :
+        
+        for butid, button_infos in self.empty_text.items():
+            butid['text'] = self.options_data['keyboard_controls'][button_infos[0]][button_infos[1]]
+
+
+        self.kbbut_ctrl_dict[action + categorie]['text'] = ''
+        self.empty_text[self.kbbut_ctrl_dict[action + categorie]] = categorie, action
+
+        self.kbbut_ctrl_dict[action + categorie].bind(
+            '<KeyPress>',
+            lambda evt, action=action, categorie=categorie: self.kbset_new_key(evt.keysym.upper(), action, categorie)
+        )
+        self.kbbut_ctrl_dict[action + categorie].focus_set()
+
+
+
+
+    def kbset_new_key(self, key, action, categorie) :
+
+        self.kbbut_ctrl_dict[action + categorie]['text'] = key
+        self.options_data['keyboard_controls'][categorie][action] = key
+
+        self.kbbut_ctrl_dict[action + categorie].unbind('<KeyPress>')
+        self.empty_text.pop(self.kbbut_ctrl_dict[action + categorie])
+
+
+
+    def x_change_ctrl(self, action, categorie) :
+
+        gamepad = devices.gamepads[0]
+
+        stop = False
+        while not stop :
+            xinput = gamepad.read()[0]
+
+            if xinput.code != 'Sync' :
+                if xinput.ev_type == 'Key' and xinput.state == 1 :
+                    stop = True
+                    key = xinput.code
+
+                elif xinput.ev_type == 'Absolute' :
+                    if abs(xinput.state) > self.options_data['controller_sensibility'][xinput.code] :
+                        keya = xinput.code
+                        key = keya + '+' if xinput.state > 0 else keya + '-'
+                        stop = True
+
+
+        self.xbut_ctrl_dict[action + categorie]['text'] = key
+        self.options_data['controller_controls'][categorie][action] = key
+
+            
+
+
+    def save_options(self) :
+
+        self.options_data['options']['ISKEYBOARD'] = not self.isxbox_var.get()
+
+        self.canvas.delete(self.option_window)
+
+        self.aff_txt()
+
+
+
+    def prepare2start(self, carte) :
+
+
+        # get the json
         json_path = self.menu_map_dis[carte]
 
 
         with open(json_path, "r", encoding="utf8") as data :
             data_dict = jsload(data) # jsload -> json.load
 
-        self.root.com["data"] = data_dict
+        self.root.com["level_data"] = data_dict
+
+        self.root.com['options_data'] = self.options_data
+
         self.root.change_page("main_menu", "in_game")
 
         logger.info('Game started with the map called "{}".'.format(json_path))
 
+
+        
         self.root.in_game.play()
 
 
+    def quit(self) :
+        
+        self.root.com['options_data'] = self.options_data
+        self.root.save()
+        tk.Frame.quit(self)
+
+
+
+###################################################################################################
 
 
 
@@ -223,16 +444,6 @@ class InGameInterface(tk.Frame) :
 
 
 
-        with open('data', 'rb') as data_file :
-            unpickler = pickle.Unpickler(data_file)
-            data = unpickler.load()
-
-        self.sensibilities = data['controller_sensibility']
-
-        if ISKEYBOARD :
-            self.controls = data['keyboard_controls']
-        else :
-            self.controls = data['controller_controls']
 
 
 
@@ -255,17 +466,23 @@ class InGameInterface(tk.Frame) :
         self.dyentcoords = dict()
 
 
+
+
     def play(self) :
 
         
 
-        carte = self.root.com["data"]["map_path"]
+        carte = self.root.com["level_data"]["map_path"]
+        
 
-        self.rlcoords[0] = self.root.com["data"]["pers_x"]
-        self.rlcoords[1] = self.root.com["data"]["pers_y"]
 
-        self.coords[0] = self.psimg(self.root.com["data"]["pers_x"])
-        self.coords[1] = self.psimg(self.root.com["data"]["pers_y"])
+
+
+        self.rlcoords[0] = self.root.com["level_data"]["pers_x"]
+        self.rlcoords[1] = self.root.com["level_data"]["pers_y"]
+
+        self.coords[0] = self.psimg(self.root.com["level_data"]["pers_x"])
+        self.coords[1] = self.psimg(self.root.com["level_data"]["pers_y"])
 
 
         global create_bg
@@ -300,7 +517,7 @@ class InGameInterface(tk.Frame) :
         self.entities = list()
 
 
-        st = self.root.com["data"].get("static_entities", {})
+        st = self.root.com["level_data"].get("static_entities", {})
 
         for entity_type, ele in st.items() :
 
@@ -320,7 +537,7 @@ class InGameInterface(tk.Frame) :
         
 
 
-        dy = self.root.com["data"].get("dynamic_entities", {}) # pour raccourcir
+        dy = self.root.com["level_data"].get("dynamic_entities", {}) # pour raccourcir
 
         for entity_type, ele in dy.items() :
 
@@ -337,16 +554,25 @@ class InGameInterface(tk.Frame) :
                 self.dyentcoords[tuple(ent_options["rlcoords"])] = entity
 
 
-        if ISKEYBOARD :
+
+
+        if self.root.com['options_data']['options']['ISKEYBOARD'] :
+            
+            self.controls = self.root.com['options_data']['keyboard_controls']
+
             self.event_handler = KeyboardHandler(self.keys_handler, self.key_release)
             self.play_canvas.bind("<KeyPress>", self.event_handler.key_press)
             self.play_canvas.bind("<KeyRelease>", self.event_handler.key_release)
             self.play_canvas.focus_set()
+
         else :
+
+            self.controls = self.root.com['options_data']['controller_controls']
+            self.sensibilities = self.root.com['options_data']['controller_sensibility']
+
             self.event_handler = XboxControllerHandler(self.keys_handler, self.key_release)
             self.thread = xcth.ListeningThread(self.sensibilities, self.event_handler.key_input)
             self.thread.start()
-
 
 
 
@@ -366,7 +592,7 @@ class InGameInterface(tk.Frame) :
 
 
     def keys_handler(self, key) :
-        if key == self.controls["return_to_main_menu"] : self.reinitialise()
+        if key == self.controls['menu']["return_to_main_menu"] : self.reinitialise()
 
         elif key in self.controls["pers_controls"].values() :
 
@@ -600,6 +826,9 @@ class InGameInterface(tk.Frame) :
 
 
     def destroy(self) :
+        
+        self.root.save()
+
         thread = getattr(self, 'thread', None)
         if thread is not None :
             thread.stop = True
@@ -628,6 +857,7 @@ for temp in temps :
 
 
 for thread in enumerate_threads() : # stop remaining threads (only usefull if something forces the game to shutdown)
+    # enumerate_threads = threading.enumerate
     if isinstance(thread, xcth.ListeningThread) :
         thread.stop = True
         print("Si ce message persiste, veuillez appuyer sur un bouton de votre controlleur.")

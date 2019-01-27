@@ -26,31 +26,8 @@ def event_handler(evt, simple_state=None, releasing=False) :
 
 
 def main(sensibilities=sensibilities, eveny_handler=event_handler) :
-    stop = False
-    activated = dict()
-
-    while not stop :
-        xinput = gamepad.read()[0]
-        if xinput.code == "BTN_SELECT" and xinput.state == 1:
-            stop = True
-        elif xinput.ev_type == 'Absolute' :
-            if xinput.state > 0 :
-                state = 1
-            else :
-                state = -1
-                
-            if abs(xinput.state) >= sensibilities[xinput.code] :
-
-                if not activated.get(xinput.code + str(state), False) :
-                    activated[xinput.code + str(state)] = True
-                    event_handler(xinput, state, False)
-                    
-            elif activated.get(xinput.code + str(state), False) :
-                activated[xinput.code + str(state)] = False
-                event_handler(xinput, state, True)
-
-        elif xinput.ev_type == 'Key' :
-            event_handler(xinput, releasing=not xinput.state)
+    kb = devices.keyboards[0]
+    print(kb.read())
 
 
 if __name__ == '__main__' :
