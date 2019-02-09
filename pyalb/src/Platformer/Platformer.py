@@ -31,6 +31,7 @@ class Viewer(tk.Frame):
         self.canvas.pack(fill='both', expand=True)
 
         self.main_menu_displayer = None
+        self.game_displayer = None
 
     def display_main_menu(self):
 
@@ -88,51 +89,10 @@ class Viewer(tk.Frame):
         def delete_text(self):
             self.canvas.delete('text')
 
-        def display_level_choice(self):
-            self.delete_text()
-            self.level_choice_displayer = self.LevelChoiceDisplayer(self.mmviewer)
+    class GameDisplayer:
 
-        class LevelChoiceDisplayer:
-
-            def __init__(self, mmviewer):
-
-                self.canvas = mmviewer.canvas
-                self.screenheight = mmviewer.screenheight
-                self.screenwidth = mmviewer.screenwidth
-                self.thumbnails = list()
-                self.thumbnails_gray_border = list()
-
-                self.load_thumbnails('Levels')
-                self.display_thumbnails()
-
-            def load_thumbnails(self, path):
-
-                for directory in os.listdir(path):
-
-                    for thumbnail_path in iglob('{}/{}/*_thumbnail.png'.format(path, directory)):
-                        normpath = os.path.normpath(thumbnail_path)
-                        image_pil = Image.open(normpath)
-                        self.thumbnails.append((ImageTk.PhotoImage(image=image_pil), normpath))
-
-                    for thumbnail_path in iglob('{}/{}/*_grayborder-thumbnail.png'.format(path, directory)):
-                        normpath = os.path.normpath(thumbnail_path)
-                        gbimage_pil = Image.open(normpath)
-                        self.thumbnails_gray_border.append(ImageTk.PhotoImage(image=gbimage_pil))
-
-            def display_thumbnails(self):
-
-                if self.thumbnails:
-
-                    for i, image in enumerate(self.thumbnails):
-                        img_coords = int((i + 1) * self.screenwidth / 10), self.screenheight // 5 * 4
-
-                        lvl_name = os.path.split(image[1])[-1][:-14]
-                        self.canvas.create_image(
-                            *img_coords,
-                            image=image[0],
-                            activeimage=self.thumbnails_gray_border[i],
-                            tags=('thumbnail', 'start', lvl_name)
-                        )
+        def __init__(self):
+            pass
 
 
 class Controller:
@@ -147,6 +107,9 @@ class Controller:
 
         self.level_img = None
         self.array_level_img = None
+
+        self.mainmenu_controller = None
+        self.ingame_controller = None
 
     def load_level(self, path):
 
@@ -173,9 +136,14 @@ class Controller:
 
         print(0)
 
+    def create_mainmenu(self):
+        self.mainmenu_controller = self.MainMenu(self)
+
     class MainMenu:
 
-        def __init__(self, main_viewer):
+        def __init__(self, main_controller):
+
+            main_viewer = main_controller.viewer
 
             main_viewer.display_main_menu()
             main_viewer.canvas.bind('<Button-1>', self.click)
@@ -184,6 +152,7 @@ class Controller:
             self.current_menu = 'main'
 
             self.viewer = main_viewer
+            self.main_controller = main_controller
 
         def click(self, evt):
             item = self.viewer.canvas.find_closest(evt.x, evt.y)
@@ -199,9 +168,9 @@ class Controller:
                     pass
 
         def new_game(self):
-            self.current_menu = 'select_level'
-            self.viewer.main_menu_displayer.display_level_choice()
+            self.current_menu = None
             print('new_game')
+            self.start()
 
         def options(self):
             print('options')
@@ -210,9 +179,30 @@ class Controller:
             self.viewer.quit()
             sys.exit()
 
-        def start(self, lvl):
+        def start(self):
+            self.viewer.main_menu_displayer.canvas.delete('all')
+            del self.viewer.main_menu_displayer
 
-            print(lvl)
+            self.main_controller.start_game()
+            del self.main_controller.mainmenu_controller
+
+    def start_game(self):
+        self.viewer.game_displayer= self.viewer.GameDisplayer()
+        self.ingame_controller = self.InGame(self)
+
+    class InGame:
+
+        def __init__(self, main_controller):
+
+            self.main_controller = main_controller
+            self.viewer = main_controller.viewer
+            self.level_img = main_controller.level_img
+            if self.level_img is None:
+                raise self.LevelNotLoadedError('Level must be loaded before the game starts.')
+            self.model = main_controller.model
+
+        class LevelNotLoadedError(Exception):
+            pass
 
 
 class Model:
@@ -248,7 +238,5 @@ if __name__ == '__main__':
     controller = Controller(model, viewer)
     viewer.pack(fill='both', expand=1)
     controller.load_level('Levels/test/level_test.lvl')
-
-    mainmenu = controller.MainMenu(viewer)
 
     root.mainloop()
