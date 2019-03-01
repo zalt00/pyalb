@@ -1,4 +1,3 @@
-#! C:\Users\HeleneLeBerre\envs\setup_level.py\python.exe
 # -*- coding: utf-8 -*-
 
 
@@ -15,6 +14,7 @@ from glob import iglob
 import os
 from setup_level import load_blocks, parse_level, properly_resize_img
 
+IMAGES_PATH = './Images/'
 
 class Viewer(tk.Frame):
 
@@ -36,21 +36,20 @@ class Viewer(tk.Frame):
 
     def display_main_menu(self):
 
-        self.main_menu_displayer = self.MainMenuDisplayer(self)
+        self.main_menu_displayer = self.MainMenuDisplayer(self.canvas, self.screenwidth, self.screenheight)
 
     class MainMenuDisplayer:
 
-        def __init__(self, mmviewer):
+        def __init__(self, canvas, screenwidth, screenheight):
 
-            self.canvas = mmviewer.canvas
+            self.canvas = canvas
 
             self.mmbg_img = tk.PhotoImage(file='Images/bg.png')
-            mmviewer.canvas.create_image(0, 0, image=self.mmbg_img, anchor='nw')
+            self.canvas.create_image(0, 0, image=self.mmbg_img, anchor='nw')
 
-            self.screenwidth = mmviewer.screenwidth
-            self.screenheight = mmviewer.screenheight
+            self.screenwidth = screenwidth
+            self.screenheight = screenheight
 
-            self.mmviewer = mmviewer
             self.level_choice_displayer = None
 
             self.display_text()
@@ -127,13 +126,13 @@ class Controller:
         if array_map is None:
             raise KeyError('Loaded dictionary must have an "array_map" key.')
 
-        blocks = load_blocks()
+        blocks = load_blocks(IMAGES_PATH + 'Blocks/')
         aunresized_level_img, self.model.solid_blocks_array = parse_level(array_map, blocks)
 
         unresized_level_img = Image.fromarray(aunresized_level_img)
 
         self.level_img = properly_resize_img(unresized_level_img, self.viewer.screenheight, 50)
-        self.binfos = '50|h' #  number | h (height) or w (width)
+        self.binfos = (50,  'h')
 
         level_data = level.get('level_data', None)
         if level_data is None:
@@ -144,22 +143,20 @@ class Controller:
         print(0)
 
     def create_mainmenu(self):
-        self.mainmenu_controller = self.MainMenu(self)
+        self.mainmenu_controller = self.MainMenu(self.viewer, self.start_game)
 
     class MainMenu:
 
-        def __init__(self, main_controller):
+        def __init__(self, viewer, start_game_callback):
 
-            main_viewer = main_controller.viewer
-
-            main_viewer.display_main_menu()
-            main_viewer.canvas.bind('<Button-1>', self.click)
-            main_viewer.canvas.focus_set()
+            viewer.display_main_menu()
+            viewer.canvas.bind('<Button-1>', self.click)
+            viewer.canvas.focus_set()
 
             self.current_menu = 'main'
 
-            self.viewer = main_viewer
-            self.main_controller = main_controller
+            self.viewer = viewer
+            self.start = start_game_callback
 
         def click(self, evt):
             item = self.viewer.canvas.find_closest(evt.x, evt.y)
@@ -186,67 +183,60 @@ class Controller:
             self.viewer.quit()
             sys.exit()
 
-        def start(self):
-            self.viewer.main_menu_displayer.canvas.delete('all')
-            del self.viewer.main_menu_displayer
-
-            self.main_controller.start_game()
-            del self.main_controller.mainmenu_controller
-
     def start_game(self):
+        del self.mainmenu_controller
+
+        self.viewer.canvas.delete('all')
+        del self.viewer.main_menu_displayer
+
         self.viewer.game_displayer = self.viewer.GameDisplayer()
-        self.ingame_controller = self.InGame(self)
+        self.ingame_controller = self.InGame(self.viewer, self.model, self.level_img, self.binfos)
 
     class InGame:
 
-        def __init__(self, main_controller):
+        def __init__(self, viewer, model, level_img, binfos):
 
-            self.controller = main_controller
-            self.viewer = main_controller.viewer
-            self.model = main_controller.model
+            self.viewer = viewer
+            self.model = model
 
-            self.player = self.Player(self.viewer, Image.open('pers.png'))
+            self.CENTER = self.viewer.screenwidth // 2, self.viewer.screenheight // 2
 
-            level_img = main_controller.level_img
-            if level_img is None:
-                raise self.LevelNotLoadedError('Level must be loaded before the game starts.')
-            else:
-                self.level_img = ImageTk.PhotoImage(level_img)
-
-            n, horw = self.controller.binfos.split('|')
+            #  Determines the on-screen size of one blocks
+            n, horw = binfos
             n = int(n)
             onscreen_bsize = self.viewer.screenheight / n if horw == 'h' else self.viewer.screenwidth / n
+            self.B = onscreen_bsize
+
+            #  player creation
+            self.player = self.Player(Image.open('pers.png'), self.rl2ons(self.model.player_coords))
+            self.viewer.canvas.create_image(*self.player.coords.flat, image=self.player.img, tags=['player'])
+
+            #  Level img creation
             base_levelimg_coords = self.player.coords + tuple(
                 int(round(a / 2 - onscreen_bsize / 2)) for a in level_img.size)
-            self.level_img_coords = base_levelimg_coords - self.model.player_coords * onscreen_bsize
+            self.level_img_coords = base_levelimg_coords - self.model.player_coords * self.B
 
-            self.viewer.canvas.create_image(*self.level_img_coords, image=self.level_img)
+            self.tk_level_img = ImageTk.PhotoImage(level_img)
+            self.viewer.canvas.create_image(*self.level_img_coords, image=self.tk_level_img)
 
             self.viewer.canvas.tag_raise('player')
 
-        class LevelNotLoadedError(Exception):
-            pass
+        def rl2ons(self, coords):
+            """Coverts "real" coordinates to on-screen coordinates.
+            Real coordinates are based on the player position inside the level, on-screen coordinates are based on
+            player image on screen.
+            """
+            return coords * self.B + int(round(self.B / 2))
 
         class Player:
 
-            def __init__(self, igviewer, img, on_screen_coords='center'):
-
-                self.viewer = igviewer
+            def __init__(self, img, on_screen_coords):
 
                 self.img = ImageTk.PhotoImage(img)
-                if on_screen_coords == 'center':
-                    self.coords = np.array(
-                        (self.viewer.screenwidth // 2, self.viewer.screenheight // 2),
-                        dtype=np.int32
-                    )
-                else:
-                    self.coords = np.array(on_screen_coords, dtype=np.int32)
-                    if not isinstance(self.coords, np.ndarray):
-                        raise TypeError('Coordinates must be a np.ndarray instance.')
-                    if not len(self.coords.flat) == 2:
-                        raise ValueError('Coordinates\' length must be 2.')
+                self.coords = np.array(on_screen_coords, dtype=np.int32)
 
-                self.viewer.canvas.create_image(*self.coords, image=self.img, tags=['player'])
+                if not len(self.coords.flat) == 2:
+                    raise ValueError('Coordinates\' length must be 2.')
 
 
 class Model:

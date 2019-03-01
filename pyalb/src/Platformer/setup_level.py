@@ -1,4 +1,3 @@
-#! C:\Users\HeleneLeBerre\envs\setup_level.py\python.exe
 # coding = Utf-8
 
 from __future__ import print_function
@@ -28,7 +27,7 @@ def load_blocks(path=""):
     """
     path -> Folder of the blocks, default if current directory.
 
-    returns the dictionnary with key=block_id and value=block
+    returns the dictionary with key=block_id and value=block
     """
     image_paths = glob(path + '!*;*;*!.png')
     blocks = dict()
@@ -122,7 +121,7 @@ def _main():
     canvas['highlightthickness'] = 0
     canvas.pack(fill='both', expand=1)
 
-    pilimage = properly_resize_img(Image.fromarray(level_image), root.winfo_screenheight(), 10)
+    pilimage = properly_resize_img(Image.fromarray(level_image), root.winfo_screenheight(), 64)
 
     img = list()
     img.append(ImageTk.PhotoImage(image=pilimage))
